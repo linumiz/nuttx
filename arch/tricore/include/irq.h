@@ -42,6 +42,7 @@
 
 /* Include chip-specific IRQ definitions (including IRQ numbers) */
 
+#include <arch/arch.h>
 #include <arch/chip/irq.h>
 
 #if defined(CONFIG_ARCH_TC3XX)
