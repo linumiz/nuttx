@@ -1,3 +1,4 @@
+#include <tricore.h>
 /*
 1.
 sp-> PSPR0
@@ -15,6 +16,7 @@ reset cause
 	.section .start
 
 	.global	btv_vector
+	.global __start; .type __start, %function
 
 __start:
 	/* Phase 1: Start */
@@ -69,14 +71,14 @@ __start:
 
 	/* Phase 3: Start */
 	/* Main stack pointer to */
-	movh.a	%a10, hi:g_intstacktop
-	lea	%a10, [%a10]lo:g_intstacktop
+	movh.a	%a10, hi:__USTACK
+	lea	%a10, [%a10]lo:__USTACK
 	dsync	/* FIXME why? */
 
 	/* Initialize context save areas */
-	movh.a  %a15, hi:tricore_csa_dspr
-	lea     %a15, [%a15], lo:tricore_csa_dspr
-	lea     %a14, [%a15], CONFIG_TRICORE_CSA_COUNT * 64
+	movh.a  %a15, hi:__CSA_BEGIN
+	lea     %a15, [%a15], lo:__CSA_BEGIN
+	lea     %a14, [%a15], __CSA_SIZE
 	lea     %a13, 64
 
 	mov.d   %d14, %a15
@@ -101,7 +103,9 @@ csa_loop:
 	isync
 	dsync
 
-	j nx_start
+live:
+	j live
+//	j nx_start
 
 	/* Phase 3: END */
 
@@ -113,34 +117,6 @@ disable_virtualization:
 	mtcr IFX_CPU_PSW, %d15
 	isync
 	rfh
-
-/* program section */
-/* CSA PSPR */
-	.pspr
-        .align  8
-        .globl  tricore_csa
-        .type   tricore_csa, object
-
-tricore_csa:
-        .space  CONFIG_TRICORE_CSA_COUNT
-
-/* data section */
-	.dspr // FIXME
-	.balign	4
-
-	.globl	g_intstacktop
-	.type	g_intstacktop, object
-
-g_intstacktop:
-	.space CONFIG_ARCH_INTERRUPTSTACK
-
-	.globl	tricore_csa_dspr
-	.type	tricore_csa_dspr, object
-tricore_csa_dspr:
-        .space  CONFIG_TRICORE_CSA_COUNT
-
-
-#endif
 
 /*
 2.

@@ -1,6 +1,6 @@
 #include "asm_macros.inc"
 
-	.section .text
+	.section .traptab
 	.global	btv_vector
 
 btv_vector:
