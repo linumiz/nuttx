@@ -3,7 +3,7 @@ OUTPUT_ARCH("tricore")
 ENTRY(__start)
 
 __USTACK_SIZE = 2K;
-__ISTACK_SIZE = 1k;
+__ISTACK_SIZE = 1K;
 __HEAP_MIN = 4K;
 CONFIG_TRICORE_CSA_COUNT = 128 ;
 
@@ -34,6 +34,13 @@ SECTIONS
 		. = ALIGN(8);
 	} > CODE_MEM
 
+	.text 0x80000100 : 
+	{
+		KEEP(*(.text));
+	} > CODE_MEM
+
+	/DISCARD/ : { *(.comment) }
+	/DISCARD/ : { *(.callinfo) }
 	.ustack : ALIGN(8) FLAGS(aw)
 	{
 		. +=  __USTACK_SIZE ;

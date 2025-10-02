@@ -103,6 +103,13 @@ csa_loop:
 	isync
 	dsync
 
+	/* copy .data */
+	/* clear bss */
+
+	mov %d15, 0
+	mov %d4, %d15
+	call tricore_live
+
 live:
 	j live
 //	j nx_start
