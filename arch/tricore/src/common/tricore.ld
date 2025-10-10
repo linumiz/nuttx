@@ -1,6 +1,7 @@
 OUTPUT_FORMAT("elf32-tricore")
 OUTPUT_ARCH("tricore")
 ENTRY(__start)
+EXTERN(__start)
 
 __USTACK_SIZE = 2K;
 __ISTACK_SIZE = 1K;
@@ -17,6 +18,7 @@ MEMORY
 }
 
 REGION_ALIAS("CODE_MEM", pflash0)
+REGION_ALIAS("DATA_MEM", dsram0)
 REGION_ALIAS("BSS_MEM", dsram0)
 REGION_ALIAS("CSA_MEM", dsram0)
 
@@ -25,41 +27,56 @@ SECTIONS
 	.start :
 	{
 		KEEP(*(.start))
-		. = ALIGN(8);
+		. = ALIGN(4);
 	} > CODE_MEM
 
-	.traptab : FLAGS(axl)
+	.traptab :
 	{
 		KEEP(*(.traptab))
-		. = ALIGN(8);
+		. = ALIGN(4);
 	} > CODE_MEM
 
-	.text 0x80000100 : 
+	.text :
 	{
-		KEEP(*(.text));
+		KEEP(*(.text))
+		. = ALIGN(2);
 	} > CODE_MEM
 
-	/DISCARD/ : { *(.comment) }
-	/DISCARD/ : { *(.callinfo) }
-	.ustack : ALIGN(8) FLAGS(aw)
+	.data :
+	{
+		_sdata = .;
+		*(.data)
+		_edata = .;
+	} > DATA_MEM AT> CODE_MEM
+	_data_load = LOADADDR(.data);
+
+	.bss . :
+	{
+		_sbss = .;
+		*(.bss)
+		_ebss = .;
+	} > BSS_MEM
+
+	.ustack . : ALIGN(8) FLAGS(aw)
 	{
 		. +=  __USTACK_SIZE ;
-		. = ALIGN(8) ;
 		__USTACK =  . ;
 	} > BSS_MEM
 
-	.istack : ALIGN(8) FLAGS(aw)
+	.istack . : ALIGN(8) FLAGS(aw)
 	{
 		. +=  __ISTACK_SIZE ;
-		. = ALIGN(8) ;
 		__ISTACK =  . ;
 	} > BSS_MEM
 
-	.csa : ALIGN(64) FLAGS(aw)
+	.csa ALIGN(64) : ALIGN(64) FLAGS(aw)
 	{
 		__CSA_BEGIN = . ;
 		. +=  CONFIG_TRICORE_CSA_COUNT * 64 ;
 		__CSA_END = .;
 	} > CSA_MEM
 	__CSA_SIZE = __CSA_END - __CSA_BEGIN;
+
+	/DISCARD/ : { *(.comment) }
+	/DISCARD/ : { *(.callinfo) }
 }

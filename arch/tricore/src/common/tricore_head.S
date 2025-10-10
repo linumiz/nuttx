@@ -13,7 +13,7 @@ reset cause
  * Public Symbols
  ****************************************************************************/
 
-	.section .start
+	.section .start, "ax"
 
 	.global	btv_vector
 	.global __start; .type __start, %function
@@ -104,10 +104,39 @@ csa_loop:
 	dsync
 
 	/* copy .data */
-	/* clear bss */
+/*
+	- src addr
+	- size
+	- dst addr
+*/
+	movh.a %a2, hi:_sdata // dest
+	lea %a2, [%a2]lo:_sdata
 
-	mov %d15, 0
-	mov %d4, %d15
+	movh.a %a1, hi:_edata // source end
+	lea %a1, [%a1]lo:_edata
+
+	movh.a %a0, hi:_data_load // src
+	lea %a0, [%a0]lo:_data_load
+
+copy_data:
+	ld.w %d0, [%a0+]
+	st.w [%a2+], %d0
+	jne.a %a2, %a1, copy_data
+
+	/* clear bss */
+	movh.a %a0, hi:_sbss // start
+	lea %a0, [%a0]lo:_sbss
+
+	movh.a %a1, hi:_ebss // end
+	lea %a1, [%a1]lo:_ebss
+
+	mov %d0, 0
+clear_data:
+	st.w [%a0+], %d0
+	jne.a %a0, %a1, clear_data
+
+
+	mov %d4, 0
 	call tricore_live
 
 live:

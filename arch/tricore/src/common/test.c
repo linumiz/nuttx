@@ -1,4 +1,5 @@
-char a;
+char b;
+char a = 5;
 
 int tricore_live(char in)
 {
@@ -8,5 +9,5 @@ int tricore_live(char in)
 	else
 		tricore_live(1);
 
-	return a;
+	return b;
 }
