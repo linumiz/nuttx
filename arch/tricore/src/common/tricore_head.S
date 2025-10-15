@@ -29,6 +29,8 @@ __start:
 	lea	%a10, [%a10]lo:(IFX_CFG_SSW_CSA_USTACK_PTR)
 	dsync	/* FIXME why? */
 
+// TODO: disable endinit
+
 	/* Trap table setup */
 	mov	%d15, lo:btv_vector
 	addih   %d15, %d15, hi:btv_vector
@@ -59,6 +61,12 @@ __start:
 	/* Setup PSW */
 	mov %d15, lo:IFX_CFG_SSW_PSW_DEFAULT
 	mtcr IFX_CPU_PSW, %d15
+	isync
+
+	/* PSW.IS = 0, enable ISP stack */
+	mov	%d15, lo:__ISTACK
+	addih   %d15, %d15, hi:__ISTACK
+	mtcr	IFX_CPU_ISP, %d15
 	isync
 
 	/* TODO: A0/A1/A8/A9 - init global registers */
@@ -135,9 +143,37 @@ clear_data:
 	st.w [%a0+], %d0
 	jne.a %a0, %a1, clear_data
 
+	/* Interrupt vector table setup */
+	mov	%d15, lo:biv_vector
+	addih   %d15, %d15, hi:biv_vector
+	mtcr	IFX_CPU_BIV, %d15
+	isync
 
+// TODO: enable endinit
+
+	// Testing INT START
+	enable
+
+	mov	%d15, lo:0x120000FF
+	addih	%d15, %d15, hi:0x120000FF
+
+	movh.a %a0, hi:IFX_SRCR1
+	lea %a0, [%a0]lo:IFX_SRCR1
+	st.w [%a0], %d15
+
+	ld.w  %d15, [%a0]
+	insert %d15, %d15, 1, 23, 1
+	st.w [%a0], %d15
+
+	ld.w  %d15, [%a0]
+	insert %d15, %d15, 1, 26, 1
+	st.w [%a0], %d15
+	// Testing INT END
+
+/*
 	mov %d4, 0
 	call tricore_live
+*/
 
 live:
 	j live

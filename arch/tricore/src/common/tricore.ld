@@ -36,6 +36,12 @@ SECTIONS
 		. = ALIGN(4);
 	} > CODE_MEM
 
+	.ivtab :
+	{
+		KEEP(*(.ivtab))
+		. = ALIGN(4);
+	} > CODE_MEM
+
 	.text :
 	{
 		KEEP(*(.text))
@@ -77,6 +83,8 @@ SECTIONS
 	} > CSA_MEM
 	__CSA_SIZE = __CSA_END - __CSA_BEGIN;
 
+/*
 	/DISCARD/ : { *(.comment) }
 	/DISCARD/ : { *(.callinfo) }
+*/
 }
