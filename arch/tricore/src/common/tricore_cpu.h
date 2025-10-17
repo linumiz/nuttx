@@ -1,0 +1,20 @@
+#ifndef TRICORE_CPU_H
+#define TRICORE_CPU_H
+
+#define IFX_CPU_VCON0					0xB000
+#define IFX_CPU_PSW					0xFE04
+#define IFX_CPU_CORE_ID					0xFE1C
+#define IFX_CPU_BIV					0xFE20
+#define IFX_CPU_BTV					0xFE24
+#define IFX_CPU_ISP					0xFE28
+#define IFX_CPU_FCX					0xFE38
+#define IFX_CPU_LCX					0xFE3C
+
+#define IFX_CPU_CORE_ID_MASK GENMASK(2, 0)
+#define IFX_CFG_SSW_CSA_BOOT_PTR_START		(0x7010EC00)
+#define IFX_CFG_SSW_CSA_USTACK_PTR		(0x7010EB00)
+#define IFX_CFG_SSW_PSW_DEFAULT			0x980
+#define	IFX_CFG_DSPR0_START			(0x70000000)
+#define IFX_LWSRZ_VMY				(0xF4430c00)
+
+#endif

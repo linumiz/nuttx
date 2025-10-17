@@ -1,4 +1,4 @@
-#include <tricore.h>
+#include <tricore_cpu.h>
 	.section .ivtab, "ax", %progbits
 	.globl  biv_vector
 	.type   biv_vector, %object
@@ -29,9 +29,7 @@ _isr_wrapper:
 	ld.w	%d15, [%a2]
 	extr.u	%d15, %d15, 16, 11
 
+	mov	%d4, %d15
 	call	tricore_isr_handler
 	rslcx
 	rfe
-
-tricore_isr_handler:
-	ret

@@ -24,6 +24,7 @@
  * Included Files
  ****************************************************************************/
 
+#if 0
 #include <nuttx/config.h>
 
 #include <stdint.h>
@@ -32,28 +33,20 @@
 
 #include <nuttx/arch.h>
 #include <nuttx/irq.h>
+#endif
 
-#include "tricore_internal.h"
+#include <sys/types.h>
+#include "tricore_irq.h"
+#include "tricore_priv.h"
 
+#if 0
 #include "IfxSrc.h"
 #include "IfxCpu.h"
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: up_irq_enable
- *
- * Description:
- *   Enable interrupts globally.
- *
- ****************************************************************************/
-
-void up_irq_enable(void)
-{
-  IfxCpu_enableInterrupts();
-}
 
 /****************************************************************************
  * Name: up_irqinitialize
@@ -61,7 +54,7 @@ void up_irq_enable(void)
 
 void up_irqinitialize(void)
 {
-  up_irq_enable();
+	__asm__ __volatile__ ("enable" : : : "memory");
 }
 
 /****************************************************************************
@@ -74,9 +67,9 @@ void up_irqinitialize(void)
 
 void up_disable_irq(int irq)
 {
-  volatile Ifx_SRC_SRCR *src = &SRC_CPU_CPU0_SB + irq;
-
-  IfxSrc_disable(src);
+	SRCR reg = {.U = getreg32(GET_SRC(irq))};
+	reg.B.SRE = 0;
+	putreg32(reg.U, GET_SRC(irq));
 }
 
 /****************************************************************************
@@ -89,10 +82,17 @@ void up_disable_irq(int irq)
 
 void up_enable_irq(int irq)
 {
-  volatile Ifx_SRC_SRCR *src = &SRC_CPU_CPU0_SB + irq;
+	SRCR reg = {.U = getreg32(GET_SRC(irq))};
 
-  IfxSrc_init(src, IfxSrc_Tos_cpu0, irq);
-  IfxSrc_enable(src);
+	reg.B.CLRR = 1,
+	reg.B.IOVCLR = 1,
+	reg.B.SRE = 1;
+	if (reg.B.SRPN == 0x0)
+		reg.B.SRPN = TRICORE_DEFAULT_IR_PRIO;
+	if (reg.B.TOS == 0xf)
+		reg.B.TOS = TRICORE_DEFAULT_IR_TOS;
+
+	putreg32(reg.U, GET_SRC(irq));
 }
 
 #ifdef CONFIG_ARCH_HAVE_IRQTRIGGER
@@ -107,10 +107,13 @@ void up_enable_irq(int irq)
 
 void up_trigger_irq(int irq, cpu_set_t cpuset)
 {
-  (void) cpuset;
-  volatile Ifx_SRC_SRCR *src = &SRC_CPU_CPU0_SB + irq;
+	// GPRS - mbox
+	(void) cpuset;
+	SRCR reg = {.U = getreg32(GET_SRC(irq))};
 
-  IfxSrc_setRequest(src);
+	reg.B.SETR = 1;
+
+	putreg32(reg.U, GET_SRC(irq));
 }
 
 #endif
@@ -125,27 +128,30 @@ void up_trigger_irq(int irq, cpu_set_t cpuset)
 
 void up_affinity_irq(int irq, cpu_set_t cpuset)
 {
-  volatile Ifx_SRC_SRCR *src = &SRC_CPU_CPU0_SB + irq;
-  int irq_prio = src->B.SRPN;
+	SRCR reg = {.U = getreg32(GET_SRC(irq))};
 
-  IfxSrc_disable(src);
+	up_disable_irq(irq);
+	// FIXME ffs(cpuset)
+	reg.B.TOS = cpuset;
 
-  /* Only support interrupt routing mode 0,
-   * so routing to the first cpu in cpuset.
-   */
-
-  IfxSrc_init(src, ffs(cpuset) - 1, irq_prio);
-  IfxSrc_enable(src);
+	putreg32(reg.U, GET_SRC(irq));
+	up_enable_irq(irq);
 }
 
-/****************************************************************************
- * Name: tricore_ack_irq
- *
- * Description:
- *   Acknowledge the IRQ
- *
- ****************************************************************************/
-
-void tricore_ack_irq(int irq)
+int up_prioritize_irq(int irq, int priority)
 {
+	SRCR reg = {.U = getreg32(GET_SRC(irq))};
+
+	reg.B.SRPN = priority;
+
+	putreg32(reg.U, GET_SRC(irq));
 }
+
+#if 0
+int tricore_isr_handler(int irq)
+{
+	//irq_dispatch(irq, NULL);
+
+	return 0;
+}
+#endif

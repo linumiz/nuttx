@@ -1,4 +1,4 @@
-#include <tricore.h>
+#include <tricore_cpu.h>
 /*
 1.
 sp-> PSPR0
@@ -117,20 +117,22 @@ csa_loop:
 	- size
 	- dst addr
 */
-	movh.a %a2, hi:_sdata // dest
-	lea %a2, [%a2]lo:_sdata
+	movh.a %a0, hi:_sdata // dest
+	lea %a0, [%a0]lo:_sdata
 
 	movh.a %a1, hi:_edata // source end
 	lea %a1, [%a1]lo:_edata
 
-	movh.a %a0, hi:_data_load // src
-	lea %a0, [%a0]lo:_data_load
+	movh.a %a2, hi:_data_load // src
+	lea %a2, [%a2]lo:_data_load
 
+	jeq.a %a0, %a1, skip_data // no data section
 copy_data:
 	ld.w %d0, [%a0+]
 	st.w [%a2+], %d0
-	jne.a %a2, %a1, copy_data
+	jne.a %a0, %a1, copy_data
 
+skip_data:
 	/* clear bss */
 	movh.a %a0, hi:_sbss // start
 	lea %a0, [%a0]lo:_sbss
@@ -138,11 +140,13 @@ copy_data:
 	movh.a %a1, hi:_ebss // end
 	lea %a1, [%a1]lo:_ebss
 
+	jeq.a %a2, %a1, skip_bss // no bss section
 	mov %d0, 0
-clear_data:
+clear_bss:
 	st.w [%a0+], %d0
-	jne.a %a0, %a1, clear_data
+	jne.a %a0, %a1, clear_bss
 
+skip_bss:
 	/* Interrupt vector table setup */
 	mov	%d15, lo:biv_vector
 	addih   %d15, %d15, hi:biv_vector
@@ -152,7 +156,16 @@ clear_data:
 // TODO: enable endinit
 
 	// Testing INT START
-	enable
+	call up_irqinitialize
+	call up_timer_initialize
+/*
+
+	mov %d4, 1
+	call up_enable_irq
+
+	mov %d4, 1
+	mov %d5, 0
+	call up_trigger_irq
 
 	mov	%d15, lo:0x120000FF
 	addih	%d15, %d15, hi:0x120000FF
@@ -168,6 +181,7 @@ clear_data:
 	ld.w  %d15, [%a0]
 	insert %d15, %d15, 1, 26, 1
 	st.w [%a0], %d15
+*/
 	// Testing INT END
 
 /*

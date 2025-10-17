@@ -83,8 +83,6 @@ SECTIONS
 	} > CSA_MEM
 	__CSA_SIZE = __CSA_END - __CSA_BEGIN;
 
-/*
 	/DISCARD/ : { *(.comment) }
 	/DISCARD/ : { *(.callinfo) }
-*/
 }
