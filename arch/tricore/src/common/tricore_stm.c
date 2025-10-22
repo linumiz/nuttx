@@ -23,7 +23,8 @@ static inline void set_compare(uint32_t cmp)
 	putreg32(cmp, IFX_STM_CMP0(core_id, IFX_STM_DEFAULT));
 }
 
-#define CLOCKS_PER_SEC          (500 * 1000000)
+static uint32_t tick_count;
+#define CLOCKS_PER_SEC          (33 * 1000000)
 static int tricore_timerisr(int irq, uint32_t *regs, void *arg)
 {
 	uint32_t val;
@@ -37,6 +38,8 @@ static int tricore_timerisr(int irq, uint32_t *regs, void *arg)
 	val = getreg32(IFX_STM_ISCR(core_id, IFX_STM_DEFAULT));
 	val |= IFX_STM_ISCR_CMP0IRR;
 	putreg32(val, IFX_STM_ISCR(core_id, IFX_STM_DEFAULT));
+	tick_count++;
+
 	return 0;
 }
 

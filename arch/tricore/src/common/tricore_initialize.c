@@ -28,6 +28,7 @@
 #include <nuttx/board.h>
 #include <arch/board/board.h>
 
+#if 0
 #include "tricore_internal.h"
 
 /****************************************************************************
@@ -65,6 +66,7 @@ static inline void up_color_intstack(void)
 #else
 #  define up_color_intstack()
 #endif
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -89,6 +91,7 @@ static inline void up_color_intstack(void)
 
 void up_initialize(void)
 {
+#if 0
   /* Colorize the interrupt stack */
 
   up_color_intstack();
@@ -97,5 +100,6 @@ void up_initialize(void)
 
 #ifdef USE_SERIALDRIVER
   tricore_serialinit();
+#endif
 #endif
 }
