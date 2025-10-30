@@ -25,6 +25,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <arch/arch.h>
 
 #include "tricore_internal.h"
 
@@ -46,7 +47,11 @@
 
 int up_saveusercontext(void *saveregs)
 {
-  uintptr_t *regs = tricore_csa2addr(__mfcr(CPU_PCXI));
+  uintptr_t *regs;
+  uint32_t val;
+
+  IFX_MFCR(IFX_CPU_FCX, val);
+  regs = tricore_csa2addr(val);
   memcpy(saveregs, regs, XCPTCONTEXT_SIZE);
   return 0;
 }

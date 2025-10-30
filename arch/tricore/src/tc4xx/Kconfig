@@ -1,0 +1,13 @@
+comment "Infineon Aurix TC4XX Family configurations"
+
+choice
+	prompt "Infineon Aurix TC4XX Chip selection"
+
+
+config TC4XX_CHIP_TC4D7
+	bool "TC4D7 SoC"
+	select ARCH_CHIP_FAMILY_TC4XX
+	---help---
+		TC4D7 SoC
+
+endchoice

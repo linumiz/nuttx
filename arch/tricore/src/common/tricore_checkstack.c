@@ -30,12 +30,12 @@
 #include <stdint.h>
 #include <sched.h>
 #include <assert.h>
-#include <debug.h>
+//#include <debug.h>
 
-#include <nuttx/addrenv.h>
-#include <nuttx/arch.h>
+//#include <nuttx/addrenv.h>
+//#include <nuttx/arch.h>
 
-#include "sched/sched.h"
+//#include "sched/sched.h"
 #include "tricore_internal.h"
 
 #ifdef CONFIG_STACK_COLORATION

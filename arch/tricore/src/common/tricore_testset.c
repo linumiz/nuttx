@@ -35,6 +35,26 @@
  * Public Functions
  ****************************************************************************/
 
+/** \brief This function is a implementation of a binary semaphore using compare and swap instruction
+ * \param address address of resource.
+ * \param value This variable is updated with status of address
+ * \param condition if the value of address matches with the value of condition, then swap of value & address occurs.
+ *
+ */
+IFX_INLINE unsigned int Ifx__cmpAndSwap (unsigned int volatile *address,
+           unsigned int value, unsigned int condition)
+{
+ /* Gnu C compiler with Tricore 1.6 support is required to use cmpswap instruction */
+  __extension__ unsigned long long reg64
+    = value | (unsigned long long) condition << 32;
+
+  __asm__ __volatile__ ("cmpswap.w [%[addr]]0, %A[reg]"
+                        : [reg] "+d" (reg64)
+                        : [addr] "a" (address)
+                        : "memory");
+    return reg64;
+}
+
 /****************************************************************************
  * Name: up_testset
  *
@@ -60,4 +80,3 @@ spinlock_t up_testset(volatile spinlock_t *lock)
 
   return Ifx__cmpAndSwap((volatile void *)lock, SP_LOCKED, SP_UNLOCKED);
 }
-

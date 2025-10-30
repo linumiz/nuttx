@@ -22,14 +22,20 @@
 
 include $(TOPDIR)/Make.defs
 include chip/Make.defs
+include common/Make.defs
 
-ifeq ($(CONFIG_ARCH_TC3XX),y)
+ifeq ($(CONFIG_ARCH_CHIP_FAMILY_TC3XX),y)
 ARCH_SUBDIR = tc3xx
-include $(ARCH_SUBDIR)/Make.defs
+else ifeq ($(CONFIG_ARCH_CHIP_FAMILY_TC4XX),y)
+ARCH_SUBDIR = tc4xx
 endif
+include $(ARCH_SUBDIR)/Make.defs
 
 ARCH_SRCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src
+# ARCH_INCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)include
 
+# INCLUDES += ${INCDIR_PREFIX}$(ARCH_INCDIR)
+INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)chip
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)chip
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)$(ARCH_SUBDIR)
@@ -50,8 +56,8 @@ endif
 
 # The "head" object
 
-HEAD_COBJ = $(HEAD_CSRC:.c=$(OBJEXT))
-STARTUP_OBJS ?= $(HEAD_COBJ)
+HEAD_OBJ = $(HEAD_ASRC:.S=$(OBJEXT))
+STARTUP_OBJS ?= $(HEAD_OBJ)
 
 # Flat build or kernel-mode objects
 
@@ -64,19 +70,9 @@ COBJS = $(CSRCS:.c=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
-# User-mode objects
-
-UASRCS = $(CHIP_UASRCS) $(CMN_UASRCS)
-UAOBJS = $(UASRCS:.S=$(OBJEXT))
-
-UCSRCS = $(CHIP_UCSRCS) $(CMN_UCSRCS)
-UCOBJS = $(UCSRCS:.c=$(OBJEXT))
-
-USRCS = $(UASRCS) $(UCSRCS)
-UOBJS = $(UAOBJS) $(UCOBJS)
-
-KBIN = libkarch$(LIBEXT)
 BIN  = libarch$(LIBEXT)
+
+$(info HEAD_ASRC=$(HEAD_ASRC))
 
 $(foreach lib,$(notdir $(wildcard $(APPDIR)$(DELIM)staging$(DELIM)*$(LIBEXT))), \
   $(foreach elib,$(EXTRA_LIBS), \
@@ -131,26 +127,20 @@ VPATH += chip
 VPATH += common
 VPATH += $(ARCH_SUBDIR)
 
-all: $(HEAD_COBJ) $(BIN)
+all: $(HEAD_OBJ) $(BIN)
 
 .PHONY: board$(DELIM)libboard$(LIBEXT)
 
-$(AOBJS) $(UAOBJS): %$(OBJEXT): %.S
+$(AOBJS) $(HEAD_OBJ): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS) $(UCOBJS) $(HEAD_COBJ): %$(OBJEXT): %.c
+$(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
 ifeq ($(CONFIG_BUILD_FLAT),y)
 $(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
-else
-$(BIN): $(UOBJS)
-	$(call ARCHIVE, $@, $(UOBJS))
 endif
-
-$(KBIN): $(OBJS)
-	$(call ARCHIVE, $@, $(OBJS))
 
 board$(DELIM)libboard$(LIBEXT):
 	$(Q) $(MAKE) -C board libboard$(LIBEXT) EXTRAFLAGS="$(EXTRAFLAGS)"
@@ -159,7 +149,7 @@ define LINK_ALLSYMS
 	$(Q) $(TOPDIR)/tools/mkallsyms.py $(NUTTX) allsyms.tmp --orderbyname $(CONFIG_SYMTAB_ORDEREDBYNAME)
 	$(Q) $(call COMPILE, allsyms.tmp, allsyms$(OBJEXT), -x c)
 	$(Q) $(LD) $(LDFLAGS) $(LIBPATHS) $(EXTRA_LIBPATHS) \
-		-o $(NUTTX) $(HEAD_COBJ) allsyms$(OBJEXT) $(EXTRA_OBJS) \
+		-o $(NUTTX) $(HEAD_OBJ) allsyms$(OBJEXT) $(EXTRA_OBJS) \
 		$(LDSTARTGROUP) $(LDLIBS) $(EXTRA_LIBS) $(LDENDGROUP)
 	$(Q) $(call DELFILE, allsyms.tmp allsyms$(OBJEXT))
 endef
@@ -167,12 +157,14 @@ endef
 $(addsuffix .tmp,$(ARCHSCRIPT)): $(ARCHSCRIPT)
 	$(call PREPROCESS, $(patsubst %.tmp,%,$@), $@)
 
-nuttx$(EXEEXT): $(HEAD_COBJ) board$(DELIM)libboard$(LIBEXT) $(EXTRA_LIBS) $(addsuffix .tmp,$(ARCHSCRIPT))
+nuttx$(EXEEXT): $(HEAD_OBJ) board$(DELIM)libboard$(LIBEXT) $(EXTRA_LIBS) $(addsuffix .tmp,$(ARCHSCRIPT))
 
 	$(Q) echo "LD: nuttx"
 ifneq ($(CONFIG_ALLSYMS),y)
+	$(info EXTRA_LIBS=$(EXTRA_LIBS))
+	$(info LDLIBS=$(LDLIBS))
 	$(Q) $(LD) $(LDFLAGS) $(LIBPATHS) $(EXTRA_LIBPATHS) \
-		-o $(NUTTX) $(HEAD_COBJ) $(EXTRA_OBJS) \
+		-o $(NUTTX) $(HEAD_OBJ) $(EXTRA_OBJS) \
 		$(LDSTARTGROUP) $(LDLIBS) $(EXTRA_LIBS) $(LDENDGROUP)
 else
 	$(Q) # Link and generate default table
@@ -224,7 +216,6 @@ clean:
 ifeq ($(BOARDMAKE),y)
 	$(Q) $(MAKE) -C board clean
 endif
-	$(call DELFILE, $(KBIN))
 	$(call DELFILE, $(BIN))
 ifneq ($(EXTRADELFILE),)
 	$(call DELFILE, $(EXTRADELFILE))

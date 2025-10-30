@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/tricore/include/tc397/irq.h
+ * arch/tricore/include/tc4xx/irq.h
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,46 +24,22 @@
  * only indirectly through nuttx/irq.h
  */
 
-#ifndef __ARCH_TRICORE_INCLUDE_TC397_IRQ_H
-#define __ARCH_TRICORE_INCLUDE_TC397_IRQ_H
+#ifndef __ARCH_TRICORE_INCLUDE_TC4XX_IRQ_H
+#define __ARCH_TRICORE_INCLUDE_TC4XX_IRQ_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
+#include <nuttx/config.h>
+
 /****************************************************************************
  * Pre-processor Prototypes
  ****************************************************************************/
+#define NR_IRQS 2048
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
 
-/****************************************************************************
- * Inline functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-#ifndef __ASSEMBLY__
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
-
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-#endif /* __ARCH_TRICORE_INCLUDE_TC397_IRQ_H */
+#endif /* __ARCH_TRICORE_INCLUDE_TC4XX_IRQ_H */

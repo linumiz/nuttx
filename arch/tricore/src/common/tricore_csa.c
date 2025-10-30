@@ -49,20 +49,14 @@ uintptr_t *tricore_alloc_csa(uintptr_t pc, uintptr_t sp,
 {
   uintptr_t *plcsa;
   uintptr_t *pucsa;
+  uint32_t val;
 
-  plcsa = (uintptr_t *)tricore_csa2addr(__mfcr(CPU_FCX));
-
-  /* DSYNC instruction should be executed immediately prior to the MTCR */
-
-  __dsync();
+  IFX_MFCR(IFX_CPU_FCX, val);
+  plcsa = (uintptr_t *)tricore_csa2addr(val);
 
   pucsa = (uintptr_t *)tricore_csa2addr(plcsa[REG_UPCXI]);
 
-  __mtcr(CPU_FCX, pucsa[REG_UPCXI]);
-
-  /* ISYNC instruction executed immediately following MTCR */
-
-  __isync();
+  IFX_MTCR(IFX_CPU_FCX, pucsa[REG_UPCXI]);
 
   memset(pucsa, 0, XCPTCONTEXT_SIZE);
   memset(plcsa, 0, XCPTCONTEXT_SIZE);
@@ -140,13 +134,12 @@ void tricore_reclaim_csa(uintptr_t pcxi)
 
   /* Look up the current free CSA head. */
 
-  free = __mfcr(CPU_FCX);
+  IFX_MFCR(IFX_CPU_FCX, free);
 
   /* Join the current Free onto the Tail of what is being reclaimed. */
 
   tricore_csa2addr(tail)[0] = free;
 
   /* Move the head of the reclaimed into the Free. */
-
-  __mtcr(CPU_FCX, head);
+  IFX_MTCR(IFX_CPU_FCX, head);
 }

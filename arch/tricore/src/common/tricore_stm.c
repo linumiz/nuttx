@@ -1,10 +1,11 @@
 #include <stdint.h>
-//#include <time.h>
+#include <time.h>
+#include <arch/arch.h>
+#include <nuttx/irq.h>
 
 #include <tricore_irq.h>
 #include <tricore_stm.h>
-#include <tricore_cpu.h>
-#include <tricore_priv.h>
+#include <tricore_internal.h>
 
 static uint8_t core_id;
 
@@ -23,8 +24,6 @@ static inline void set_compare(uint32_t cmp)
 	putreg32(cmp, IFX_STM_CMP0(core_id, IFX_STM_DEFAULT));
 }
 
-static uint32_t tick_count;
-#define CLOCKS_PER_SEC          (33 * 1000000)
 static int tricore_timerisr(int irq, uint32_t *regs, void *arg)
 {
 	uint32_t val;
@@ -32,25 +31,17 @@ static int tricore_timerisr(int irq, uint32_t *regs, void *arg)
 	val = getreg32(IFX_STM_CMP0(core_id, IFX_STM_DEFAULT));
 	set_compare((uint32_t)val + CLOCKS_PER_SEC);
 
-	//nxsched_process_timer();
+	nxsched_process_timer();
 
 	/* clear interrupt */
 	val = getreg32(IFX_STM_ISCR(core_id, IFX_STM_DEFAULT));
 	val |= IFX_STM_ISCR_CMP0IRR;
 	putreg32(val, IFX_STM_ISCR(core_id, IFX_STM_DEFAULT));
-	tick_count++;
 
 	return 0;
 }
 
-int tricore_isr_handler(int irq)
-{
-	//irq_dispatch(irq, NULL);
-	tricore_timerisr(irq, NULL, NULL);
-
-	return 0;
-}
-
+//FIXME generalize for mfcr asm
 static inline unsigned int tricore_get_core_id(void)
 {
 	unsigned int core_id;
@@ -85,7 +76,7 @@ void up_timer_initialize(void)
 	val |= IFX_STM_ICR_CMP0EN;
 	putreg32(val, IFX_STM_ICR(core_id, IFX_STM_DEFAULT));
 
-	//irq_attach(IFX_STM2_IR_SRN(IFX_STM_DEFAULT), (xcpt_t)tricore_timerisr, NULL);
+	irq_attach(IFX_STM_IR_SRN(IFX_STM_DEFAULT), (xcpt_t)tricore_timerisr, NULL);
 	set_compare((uint32_t)last_count + CLOCKS_PER_SEC);
 	up_enable_irq(IFX_STM_IR_SRN(IFX_STM_DEFAULT));
 }

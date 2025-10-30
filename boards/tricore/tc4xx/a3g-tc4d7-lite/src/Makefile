@@ -1,5 +1,5 @@
 ############################################################################
-# arch/tricore/src/tc3xx/Toolchain.defs
+# boards/tricore/tc397/a2g-tc397-5v-tft/src/Makefile
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -19,31 +19,10 @@
 # under the License.
 #
 ############################################################################
+include $(TOPDIR)/Make.defs
 
-ifeq ($(CONFIG_ARCH_TC162),y)
-    ARCHCPUFLAGS += -mtc162
-elif ($(CONFIG_ARCH_TC18),y)
-    ARCHCPUFLAGS += -mtc18
+ifeq ($(CONFIG_BOARDCTL),y)
+CSRCS = tc4d7_appinit.c
 endif
 
-ifeq ($(CONFIG_ARCH_CHIP_TC3XX),y)
-    ARCHCPUFLAGS += -mcpu=tc39xx
-elif ($(CONFIG_ARCH_CHIP_TC4XX),y)
-    ARCHCPUFLAGS += -mcpu=tc4DAx
-endif
-
-
-ifeq ($(CONFIG_ARCH_CHIP_TC397),y)
-  ifeq ($(CONFIG_TRICORE_TOOLCHAIN_TASKING),y)
-    ARCHCPUFLAGS += --cpu=tc39xb
-    LDFLAGS      += -Ctc39xb
-  else
-    ARCHCPUFLAGS += -mcpu=tc39xx
-  endif
-
-  ARCHINCLUDES += ${INCDIR_PREFIX}$(CHIP_DIR)/tc397/Libraries/iLLD/TC39B/Tricore/Cpu/Std
-  ARCHINCLUDES += ${INCDIR_PREFIX}$(CHIP_DIR)/tc397/Libraries/Infra/Platform
-  ARCHINCLUDES += ${INCDIR_PREFIX}$(CHIP_DIR)/tc397/Configurations
-endif
-
-include $(TOPDIR)/arch/tricore/src/common/Toolchain.defs
+include $(TOPDIR)/boards/Board.mk

@@ -1,46 +1,5 @@
-/****************************************************************************
- * arch/tricore/include/arch.h
- *
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.  The
- * ASF licenses this file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- *
- ****************************************************************************/
-
-/* This file should never be included directly but, rather,
- * only indirectly through nuttx/arch.h
- */
-
-#ifndef __ARCH_TRICORE_INCLUDE_ARCH_H
-#define __ARCH_TRICORE_INCLUDE_ARCH_H
-
-/****************************************************************************
- * Included Files
- ****************************************************************************/
-
-#include <nuttx/config.h>
-
-#ifndef __ASSEMBLY__
-#  include <stdint.h>
-#  include <stddef.h>
-#endif
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
+#ifndef TRICORE_ARCH_H
+#define TRICORE_ARCH_H
 
 #define IFX_CPU_VCON0					0xB000
 #define IFX_CPU_PCXI					0xFE00
@@ -127,13 +86,6 @@
 #define FCX_FCXS_MASK   (0xf    << FCX_FCXS)
 #define FCX_FREE        (FCX_FCXS_MASK | FCX_FCXO_MASK) /* Free CSA manipulation */
 
-/* Address <--> Context Save Areas */
-
-#define tricore_csa2addr(csa) ((uintptr_t *)((((csa) & 0x000F0000) << 12) \
-                                             | (((csa) & 0x0000FFFF) << 6)))
-#define tricore_addr2csa(addr) ((uintptr_t)(((((uintptr_t)(addr)) & 0xF0000000) >> 12) \
-                                            | (((uintptr_t)(addr) & 0x003FFFC0) >> 6)))
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -165,26 +117,9 @@ struct xcptcontext
 #ifndef __ASSEMBLY__
 #define IFX_MTCR(reg, val)  { __asm__ __volatile__ ("dsync" : : : "memory"); \
 			      __asm__ __volatile__ ("mtcr %0,%1"::"i"(reg),"d"(val): "memory"); \
-			      __asm__ __volatile__ ("isync" : : : "memory");}
+			      __asm__ __volatile__ ("isync" : : : "memory")}
 
-#define IFX_MFCR(reg, val)  {__asm__ __volatile__ ("mfcr %0,%1": "=d"(val) :"i"(reg): "memory");}
+#define IFX_MFCR(reg, val)  {__asm__ __volatile__ ("mfcr %0,%1": "=d"(val) :"i"(reg): "memory")}
 #endif /* __ASSEMBLY__ */
 
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-#ifdef __cplusplus
-#define EXTERN extern "C"
-extern "C"
-{
-#else
-#define EXTERN extern
-#endif
-
-#undef EXTERN
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __ARCH_TRICORE_INCLUDE_ARCH_H */
+#endif /* TRICORE_ARCH_H */

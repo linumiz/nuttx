@@ -34,8 +34,6 @@
 #include <nuttx/addrenv.h>
 #include <nuttx/board.h>
 
-#include <arch/board/board.h>
-
 #include <sched/sched.h>
 
 #include "tricore_internal.h"
@@ -44,7 +42,7 @@
  * Public Functions
  ****************************************************************************/
 
-IFX_INTERRUPT_INTERNAL(tricore_doirq, 0, 255)
+int tricore_isr_handler(int irq)
 {
   struct tcb_s *running_task = g_running_tasks[this_cpu()];
   struct tcb_s *tcb;
@@ -52,11 +50,9 @@ IFX_INTERRUPT_INTERNAL(tricore_doirq, 0, 255)
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
   PANIC();
 #else
-  Ifx_CPU_ICR icr;
   uintptr_t *regs;
 
-  icr.U = __mfcr(CPU_ICR);
-  regs = (uintptr_t *)__mfcr(CPU_PCXI);
+  IFX_MFCR(IFX_CPU_PCXI, regs);
 
   if (running_task != NULL)
     {
@@ -77,7 +73,7 @@ IFX_INTERRUPT_INTERNAL(tricore_doirq, 0, 255)
 
   /* Deliver the IRQ */
 
-  irq_dispatch(icr.B.CCPN, regs);
+  irq_dispatch(irq, regs);
 
   /* Check for a context switch.  If a context switch occurred, then
    * g_current_regs will have a different value than it did on entry.  If an
@@ -112,8 +108,7 @@ IFX_INTERRUPT_INTERNAL(tricore_doirq, 0, 255)
       running_task = tcb;
       g_running_tasks[this_cpu()] = running_task;
 
-      __mtcr(CPU_PCXI, (uintptr_t)up_current_regs());
-      __isync();
+      IFX_MTCR(IFX_CPU_PCXI, (uintptr_t)up_current_regs());
     }
 
   /* Set current_regs to NULL to indicate that we are no longer in an

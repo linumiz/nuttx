@@ -45,20 +45,15 @@
 #include <arch/arch.h>
 #include <arch/chip/irq.h>
 
-#if defined(CONFIG_ARCH_TC3XX)
+#if defined(CONFIG_ARCH_CHIP_FAMILY_TC3XX)
 #  include <arch/tc3xx/irq.h>
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_TC4XX)
+#  include <arch/tc4xx/irq.h>
 #endif
 
 /****************************************************************************
  * Pre-processor Prototypes
  ****************************************************************************/
-
-/* Address <--> Context Save Areas */
-
-#define tricore_csa2addr(csa) ((uintptr_t *)((((csa) & 0x000F0000) << 12) \
-                                             | (((csa) & 0x0000FFFF) << 6)))
-#define tricore_addr2csa(addr) ((uintptr_t)(((((uintptr_t)(addr)) & 0xF0000000) >> 12) \
-                                            | (((uintptr_t)(addr) & 0x003FFFC0) >> 6)))
 
 #ifndef __ASSEMBLY__
 
@@ -91,18 +86,6 @@ EXTERN volatile uintptr_t *g_current_regs[CONFIG_SMP_NCPUS];
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_cpu_index
- *
- * Description:
- *   Return the real core number regardless CONFIG_SMP setting
- *
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_HAVE_MULTICPU
-int up_cpu_index(void) noinstrument_function;
-#endif /* CONFIG_ARCH_HAVE_MULTICPU */
-
-/****************************************************************************
  * Name: up_irq_enable
  *
  * Description:
@@ -132,10 +115,14 @@ noinstrument_function static inline_function uintptr_t up_getsp(void)
  *   Disable interrupts and return the previous value of the mstatus register
  *
  ****************************************************************************/
+#define IFX_IRQ_DISABLE_AND_SAVE(x)  __asm__ __volatile__("disable %0":"=d"(x))
+#define IFX_IRQ_RESTORE(x)  __asm__ __volatile__("restore %0"::"d"(x))
 
 noinstrument_function static inline_function irqstate_t up_irq_save(void)
 {
-  return __disable_and_save();
+  irqstate_t state;
+  IFX_IRQ_DISABLE_AND_SAVE(state);
+  return state;
 }
 
 /****************************************************************************
@@ -149,7 +136,7 @@ noinstrument_function static inline_function irqstate_t up_irq_save(void)
 noinstrument_function static inline_function
 void up_irq_restore(irqstate_t flags)
 {
-  __restore(flags);
+  IFX_IRQ_RESTORE(flags);
 }
 
 /****************************************************************************
@@ -158,20 +145,12 @@ void up_irq_restore(irqstate_t flags)
 
 static inline_function uintptr_t *up_current_regs(void)
 {
-#ifdef CONFIG_SMP
-  return (uintptr_t *)g_current_regs[up_cpu_index()];
-#else
   return (uintptr_t *)g_current_regs[0];
-#endif
 }
 
 static inline_function void up_set_current_regs(uintptr_t *regs)
 {
-#ifdef CONFIG_SMP
-  g_current_regs[up_cpu_index()] = regs;
-#else
   g_current_regs[0] = regs;
-#endif
 }
 
 /****************************************************************************
@@ -186,15 +165,7 @@ static inline_function void up_set_current_regs(uintptr_t *regs)
 noinstrument_function
 static inline_function bool up_interrupt_context(void)
 {
-#ifdef CONFIG_SMP
-  irqstate_t flags = up_irq_save();
-#endif
-
   bool ret = up_current_regs() != NULL;
-
-#ifdef CONFIG_SMP
-  up_irq_restore(flags);
-#endif
 
   return ret;
 }

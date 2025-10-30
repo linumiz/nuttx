@@ -1,4 +1,4 @@
-#include <tricore_cpu.h>
+#include <arch/arch.h>
 /*
 1.
 sp-> PSPR0
@@ -16,6 +16,7 @@ reset cause
 	.section .start, "ax"
 
 	.global	btv_vector
+	.global	__istack
 	.global __start; .type __start, %function
 
 __start:
@@ -63,12 +64,18 @@ __start:
 	mtcr IFX_CPU_PSW, %d15
 	isync
 
+#if defined(CONFIG_ARCH_INTERRUPTSTACK)
 	/* PSW.IS = 0, enable ISP stack */
-	mov	%d15, lo:__ISTACK
-	addih   %d15, %d15, hi:__ISTACK
+	mov	%d15, lo:__istack
+	addih   %d15, %d15, hi:__istack
 	mtcr	IFX_CPU_ISP, %d15
 	isync
-
+#else
+	/* PSW.IS = 1, enable user stack */
+	or %d15, %d15, 0x200
+	mtcr IFX_CPU_PSW, %d15
+	isync
+#endif
 	/* TODO: A0/A1/A8/A9 - init global registers */
 
 	/* TODO: reset evaluation */
@@ -86,7 +93,8 @@ __start:
 	/* Initialize context save areas */
 	movh.a  %a15, hi:__CSA_BEGIN
 	lea     %a15, [%a15], lo:__CSA_BEGIN
-	lea     %a14, [%a15], __CSA_SIZE
+	movh.a  %a14, hi:__CSA_END
+	lea     %a14, [%a14], lo:__CSA_END
 	lea     %a13, 64
 
 	mov.d   %d14, %a15
@@ -117,13 +125,13 @@ csa_loop:
 	- size
 	- dst addr
 */
-	movh.a %a0, hi:_sdata // dest
+	movh.a %a0, hi:_sdata // src start
 	lea %a0, [%a0]lo:_sdata
 
-	movh.a %a1, hi:_edata // source end
+	movh.a %a1, hi:_edata // src end
 	lea %a1, [%a1]lo:_edata
 
-	movh.a %a2, hi:_data_load // src
+	movh.a %a2, hi:_data_load // dest
 	lea %a2, [%a2]lo:_data_load
 
 	jeq.a %a0, %a1, skip_data // no data section
@@ -140,7 +148,7 @@ skip_data:
 	movh.a %a1, hi:_ebss // end
 	lea %a1, [%a1]lo:_ebss
 
-	jeq.a %a2, %a1, skip_bss // no bss section
+	jeq.a %a0, %a1, skip_bss // no bss section
 	mov %d0, 0
 clear_bss:
 	st.w [%a0+], %d0
@@ -156,9 +164,9 @@ skip_bss:
 // TODO: enable endinit
 
 	// Testing INT START
+/*
 	call up_irqinitialize
 	call up_timer_initialize
-/*
 
 	mov %d4, 1
 	call up_enable_irq
@@ -181,17 +189,16 @@ skip_bss:
 	ld.w  %d15, [%a0]
 	insert %d15, %d15, 1, 26, 1
 	st.w [%a0], %d15
-*/
-	// Testing INT END
+	//Testing INT END
 
-/*
 	mov %d4, 0
 	call tricore_live
-*/
 
 live:
 	j live
-//	j nx_start
+*/
+	call tricore_wdt_disable
+	j nx_start
 
 	/* Phase 3: END */
 

@@ -28,7 +28,6 @@
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
-#include <arch/board/board.h>
 
 #include "tricore_internal.h"
 
@@ -71,6 +70,6 @@ void up_idle(void)
    * sleep in a reduced power mode until an interrupt occurs to save power
    */
 
-  Ifx_Ssw_infiniteLoop();
+  while (1); // FIXME should this needs to be 'loop' instruction?
 #endif
 }

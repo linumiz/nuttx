@@ -31,15 +31,12 @@
 
 #ifndef __ASSEMBLY__
 #  include <nuttx/compiler.h>
-#  include <nuttx/arch.h>
+//#  include <nuttx/arch.h>
+#  include <stdbool.h>
 #  include <sys/types.h>
 #  include <stdint.h>
 #  include <syscall.h>
 
-#  include <IfxCpu_reg.h>
-#  include <Ifx_Ssw_Compilers.h>
-#  include <Tricore/Compilers/Compilers.h>
-#  include <IfxCpu_Intrinsics.h>
 #endif
 
 /****************************************************************************
@@ -156,7 +153,7 @@ typedef void (*up_vector_t)(void);
  * Public Data
  ****************************************************************************/
 
-#ifndef __ASSEMBLY__
+#if 0 //ndef __ASSEMBLY__
 
 /* This is the beginning of heap as provided from up_head.S. This is the
  * first address in DRAM after the loaded program+bss+idle stack.  The
@@ -194,6 +191,15 @@ extern uintptr_t        __A0_MEM[];    /* End+1 of .data */
 
 #endif
 
+extern uintptr_t        _sheap;
+extern uintptr_t        _eheap;
+extern size_t		_heap_size;
+
+extern uintptr_t __USTACK;
+#if defined(CONFIG_ARCH_INTERRUPTSTACK)
+extern uintptr_t        __istack;
+#endif 
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -227,7 +233,7 @@ uintptr_t *tricore_alloc_csa(uintptr_t pc, uintptr_t sp,
 void tricore_reclaim_csa(uintptr_t pcxi);
 
 /* Low level serial output **************************************************/
-
+#if 0
 void tricore_lowputc(char ch);
 void tricore_lowputs(const char *str);
 
@@ -243,6 +249,7 @@ void tricore_earlyserialinit(void);
 
 struct oneshot_lowerhalf_s *
 tricore_systimer_initialize(volatile void *tbase, int irq, uint64_t freq);
+#endif
 
 /* Debug ********************************************************************/
 

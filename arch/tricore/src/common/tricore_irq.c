@@ -24,7 +24,6 @@
  * Included Files
  ****************************************************************************/
 
-#if 0
 #include <nuttx/config.h>
 
 #include <stdint.h>
@@ -33,16 +32,10 @@
 
 #include <nuttx/arch.h>
 #include <nuttx/irq.h>
-#endif
 
 #include <sys/types.h>
 #include "tricore_irq.h"
-#include "tricore_priv.h"
-
-#if 0
-#include "IfxSrc.h"
-#include "IfxCpu.h"
-#endif
+#include "tricore_internal.h"
 
 /****************************************************************************
  * Public Functions
@@ -51,6 +44,11 @@
 /****************************************************************************
  * Name: up_irqinitialize
  ****************************************************************************/
+
+void up_irq_enable(void)
+{
+	__asm__ __volatile__ ("enable" : : : "memory");
+}
 
 void up_irqinitialize(void)
 {
@@ -67,9 +65,9 @@ void up_irqinitialize(void)
 
 void up_disable_irq(int irq)
 {
-	SRCR reg = {.U = getreg32(GET_SRC(irq))};
+	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
 	reg.B.SRE = 0;
-	putreg32(reg.U, GET_SRC(irq));
+	putreg32(reg.U, IFX_IR_GET_SRC(irq));
 }
 
 /****************************************************************************
@@ -82,7 +80,7 @@ void up_disable_irq(int irq)
 
 void up_enable_irq(int irq)
 {
-	SRCR reg = {.U = getreg32(GET_SRC(irq))};
+	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
 
 	reg.B.CLRR = 1,
 	reg.B.IOVCLR = 1,
@@ -92,7 +90,7 @@ void up_enable_irq(int irq)
 	if (reg.B.TOS == 0xf)
 		reg.B.TOS = TRICORE_DEFAULT_IR_TOS;
 
-	putreg32(reg.U, GET_SRC(irq));
+	putreg32(reg.U, IFX_IR_GET_SRC(irq));
 }
 
 #ifdef CONFIG_ARCH_HAVE_IRQTRIGGER
@@ -109,11 +107,11 @@ void up_trigger_irq(int irq, cpu_set_t cpuset)
 {
 	// GPRS - mbox
 	(void) cpuset;
-	SRCR reg = {.U = getreg32(GET_SRC(irq))};
+	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
 
 	reg.B.SETR = 1;
 
-	putreg32(reg.U, GET_SRC(irq));
+	putreg32(reg.U, IFX_IR_GET_SRC(irq));
 }
 
 #endif
@@ -128,30 +126,21 @@ void up_trigger_irq(int irq, cpu_set_t cpuset)
 
 void up_affinity_irq(int irq, cpu_set_t cpuset)
 {
-	SRCR reg = {.U = getreg32(GET_SRC(irq))};
+	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
 
 	up_disable_irq(irq);
 	// FIXME ffs(cpuset)
 	reg.B.TOS = cpuset;
 
-	putreg32(reg.U, GET_SRC(irq));
+	putreg32(reg.U, IFX_IR_GET_SRC(irq));
 	up_enable_irq(irq);
 }
 
 int up_prioritize_irq(int irq, int priority)
 {
-	SRCR reg = {.U = getreg32(GET_SRC(irq))};
+	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
 
 	reg.B.SRPN = priority;
 
-	putreg32(reg.U, GET_SRC(irq));
+	putreg32(reg.U, IFX_IR_GET_SRC(irq));
 }
-
-#if 0
-int tricore_isr_handler(int irq)
-{
-	//irq_dispatch(irq, NULL);
-
-	return 0;
-}
-#endif

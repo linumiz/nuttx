@@ -28,15 +28,14 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-#include <sched.h>
+#include <nuttx/sched.h>
 #include <assert.h>
-#include <debug.h>
+//#include <debug.h>
 
 #include <nuttx/kmalloc.h>
-#include <nuttx/arch.h>
-#include <nuttx/tls.h>
+//#include <nuttx/arch.h>
+//#include <nuttx/tls.h>
 #include <nuttx/board.h>
-#include <arch/board/board.h>
 
 #include <tricore_internal.h>
 

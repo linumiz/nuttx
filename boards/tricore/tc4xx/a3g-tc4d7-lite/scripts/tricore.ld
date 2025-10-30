@@ -1,11 +1,13 @@
+#include <nuttx/config.h>
+
 OUTPUT_FORMAT("elf32-tricore")
 OUTPUT_ARCH("tricore")
 ENTRY(__start)
 EXTERN(__start)
 
-__USTACK_SIZE = 2K;
-__HEAP_SIZE = 5M;
-CONFIG_TRICORE_CSA_COUNT = 1024;
+__USTACK_SIZE = (2 * 1024);
+__HEAP_SIZE = (5 * 1024 * 1024);
+CONFIG_TRICORE_CSA_COUNT = 512;
 
 
 MEMORY
@@ -77,7 +79,7 @@ SECTIONS
 		__istack =  . ;
 	} > BSS_MEM
 #endif
-	.csa ALIGN(64) : ALIGN(64) FLAGS(aw)
+	.csa : ALIGN(64) FLAGS(aw)
 	{
 		__CSA_BEGIN = . ;
 		. +=  CONFIG_TRICORE_CSA_COUNT * 64 ;
@@ -93,6 +95,8 @@ SECTIONS
 	} > HEAP_MEM
 	_heap_size = _sheap - _eheap;
 
+#if 0
 	/DISCARD/ : { *(.comment) }
 	/DISCARD/ : { *(.callinfo) }
+#endif
 }

@@ -1,4 +1,4 @@
-#include <tricore_cpu.h>
+#include <arch/arch.h>
 	.section .ivtab, "ax", %progbits
 	.globl  biv_vector
 	.type   biv_vector, %object

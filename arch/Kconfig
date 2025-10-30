@@ -197,7 +197,6 @@ config ARCH_TRICORE
 	select ARCH_HAVE_INTERRUPTSTACK
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_TCBINFO
 	---help---
 		Infineon 32-bit AURIX TriCore architectures
 

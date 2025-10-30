@@ -27,11 +27,13 @@ set(SRCS
     tricore_csa.c
     tricore_exit.c
     tricore_getintstack.c
+    tricore_head.S
     tricore_idle.c
     tricore_initialize.c
     tricore_initialstate.c
+    tricore_interrupt.S
     tricore_irq.c
-    tricore_main.c
+#    tricore_main.c
     tricore_nputs.c
     tricore_registerdump.c
     tricore_releasestack.c
@@ -41,10 +43,13 @@ set(SRCS
     tricore_stackframe.c
     tricore_svcall.c
     tricore_switchcontext.c
-    tricore_tcbinfo.c
-    tricore_trapcall.c
-    tricore_systimer.c
-    tricore_usestack.c)
+    tricore_stm.c
+    tricore_trap.S
+#    tricore_tcbinfo.c
+#    tricore_trapcall.c
+#    tricore_systimer.c
+    tricore_usestack.c
+    tricore_wdt.c)
 
 if(CONFIG_SPINLOCK)
   list(APPEND SRCS tricore_testset.c)
