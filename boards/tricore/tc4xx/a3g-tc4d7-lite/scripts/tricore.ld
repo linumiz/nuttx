@@ -5,7 +5,6 @@ OUTPUT_ARCH("tricore")
 ENTRY(__start)
 EXTERN(__start)
 
-__USTACK_SIZE = (2 * 1024);
 __HEAP_SIZE = (5 * 1024 * 1024);
 CONFIG_TRICORE_CSA_COUNT = 512;
 
@@ -24,6 +23,7 @@ REGION_ALIAS("DATA_MEM", dsram0)
 REGION_ALIAS("BSS_MEM", dsram0)
 REGION_ALIAS("CSA_MEM", dsram0)
 REGION_ALIAS("HEAP_MEM", lmu)
+/* REGION_ALIAS("HEAP_MEM", dsram0) */
 
 SECTIONS
 {
@@ -68,7 +68,7 @@ SECTIONS
 
 	.ustack . : ALIGN(8) FLAGS(aw)
 	{
-		. +=  __USTACK_SIZE ;
+		. +=  CONFIG_IDLETHREAD_STACKSIZE ;
 		__USTACK =  . ;
 	} > BSS_MEM
 

@@ -69,7 +69,7 @@ void up_timer_initialize(void)
 	putreg32(val, IFX_STM_ISCR(core_id, IFX_STM_DEFAULT));
 
 	last_ticks = get_time64() / CLOCKS_PER_SEC;
-	last_count = last_ticks * CLOCKS_PER_SEC;
+	last_count = (last_ticks + 1) * CLOCKS_PER_SEC;
 
 	val = getreg32(IFX_STM_ICR(core_id, IFX_STM_DEFAULT));
 	val &= ~IFX_STM_ICR_CMP0OS;

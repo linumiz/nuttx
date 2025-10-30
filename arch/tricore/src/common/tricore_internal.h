@@ -191,13 +191,12 @@ extern uintptr_t        __A0_MEM[];    /* End+1 of .data */
 
 #endif
 
-extern uintptr_t        _sheap;
-extern uintptr_t        _eheap;
-extern size_t		_heap_size;
+extern uintptr_t        _sheap[];
+extern uintptr_t        _eheap[];
 
-extern uintptr_t __USTACK;
+extern uintptr_t __USTACK[];
 #if defined(CONFIG_ARCH_INTERRUPTSTACK)
-extern uintptr_t        __istack;
+extern uintptr_t        __istack[];
 #endif 
 
 /****************************************************************************
