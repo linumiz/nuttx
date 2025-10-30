@@ -53,17 +53,23 @@ SECTIONS
 
 	.data :
 	{
-		_sdata = .;
-		*(.data)
-		_edata = .;
+		_sdata = ABSOLUTE(.);
+		*(.data .data.*)
+		*(.gnu.linkonce.d.*)
+		CONSTRUCTORS
+		. = ALIGN(4);
+		_edata = ABSOLUTE(.);
 	} > DATA_MEM AT> CODE_MEM
-	_data_load = LOADADDR(.data);
+	_data_flash = LOADADDR(.data);
 
-	.bss . :
+	.bss :
 	{
-		_sbss = .;
-		*(.bss)
-		_ebss = .;
+		_sbss = ABSOLUTE(.);
+		*(.bss .bss.*)
+		*(.gnu.linkonce.b.*)
+		*(COMMON)
+		. = ALIGN(4);
+		_ebss = ABSOLUTE(.);
 	} > BSS_MEM
 
 	.ustack . : ALIGN(8) FLAGS(aw)

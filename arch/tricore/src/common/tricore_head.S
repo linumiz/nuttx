@@ -14,9 +14,6 @@ reset cause
  ****************************************************************************/
 
 	.section .start, "ax"
-
-	.global	btv_vector
-	.global	__istack
 	.global __start; .type __start, %function
 
 __start:
@@ -125,20 +122,20 @@ csa_loop:
 	- size
 	- dst addr
 */
-	movh.a %a0, hi:_sdata // src start
-	lea %a0, [%a0]lo:_sdata
+	movh.a %a0, hi:_data_flash // src start - flash
+	lea %a0, [%a0]lo:_data_flash
 
-	movh.a %a1, hi:_edata // src end
-	lea %a1, [%a1]lo:_edata
+	movh.a %a1, hi:_sdata // dest start - ram
+	lea %a1, [%a1]lo:_sdata
 
-	movh.a %a2, hi:_data_load // dest
-	lea %a2, [%a2]lo:_data_load
+	movh.a %a2, hi:_edata // dest end - ram
+	lea %a2, [%a2]lo:_edata
 
-	jeq.a %a0, %a1, skip_data // no data section
+	jeq.a %a1, %a2, skip_data // no data section
 copy_data:
 	ld.w %d0, [%a0+]
-	st.w [%a2+], %d0
-	jne.a %a0, %a1, copy_data
+	st.w [%a1+], %d0
+	jne.a %a1, %a2, copy_data
 
 skip_data:
 	/* clear bss */
