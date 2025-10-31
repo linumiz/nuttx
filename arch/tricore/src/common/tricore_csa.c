@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include <nuttx/arch.h>
+#include <arch/arch.h>
 #include <nuttx/tls.h>
 #include <arch/irq.h>
 
@@ -51,12 +52,14 @@ uintptr_t *tricore_alloc_csa(uintptr_t pc, uintptr_t sp,
   uintptr_t *pucsa;
   uint32_t val;
 
+  IFX_IRQ_DISABLE();
   IFX_MFCR(IFX_CPU_FCX, val);
-  plcsa = (uintptr_t *)tricore_csa2addr(val);
 
+  plcsa = (uintptr_t *)tricore_csa2addr(val);
   pucsa = (uintptr_t *)tricore_csa2addr(plcsa[REG_UPCXI]);
 
   IFX_MTCR(IFX_CPU_FCX, pucsa[REG_UPCXI]);
+  IFX_IRQ_ENABLE();
 
   memset(pucsa, 0, XCPTCONTEXT_SIZE);
   memset(plcsa, 0, XCPTCONTEXT_SIZE);

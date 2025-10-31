@@ -168,6 +168,8 @@ struct xcptcontext
 			      __asm__ __volatile__ ("isync" : : : "memory");}
 
 #define IFX_MFCR(reg, val)  {__asm__ __volatile__ ("mfcr %0,%1": "=d"(val) :"i"(reg): "memory");}
+#define IFX_IRQ_ENABLE()  { __asm__ __volatile__ ("enable" : : : "memory"); }
+#define IFX_IRQ_DISABLE()  { __asm__ __volatile__ ("disable" : : : "memory"); }
 #endif /* __ASSEMBLY__ */
 
 /****************************************************************************

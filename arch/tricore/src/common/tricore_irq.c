@@ -47,12 +47,12 @@
 
 void up_irq_enable(void)
 {
-	__asm__ __volatile__ ("enable" : : : "memory");
+	IFX_IRQ_ENABLE();
 }
 
 void up_irqinitialize(void)
 {
-	__asm__ __volatile__ ("enable" : : : "memory");
+	IFX_IRQ_ENABLE();
 }
 
 /****************************************************************************
