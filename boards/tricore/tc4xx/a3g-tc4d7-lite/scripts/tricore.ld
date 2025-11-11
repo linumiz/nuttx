@@ -36,7 +36,7 @@ SECTIONS
 	.traptab :
 	{
 		KEEP(*(.traptab))
-		. = ALIGN(4);
+		. = ALIGN(256);
 	} > CODE_MEM
 
 	.ivtab :

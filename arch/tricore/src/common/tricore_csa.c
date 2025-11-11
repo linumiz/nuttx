@@ -52,34 +52,35 @@ uintptr_t *tricore_alloc_csa(uintptr_t pc, uintptr_t sp,
   uintptr_t *pucsa;
   uint32_t val;
 
+// if (up_set_reg() != NULL) FIXME
   IFX_IRQ_DISABLE();
   IFX_MFCR(IFX_CPU_FCX, val);
 
-  plcsa = (uintptr_t *)tricore_csa2addr(val);
-  pucsa = (uintptr_t *)tricore_csa2addr(plcsa[REG_UPCXI]);
+  plcsa = (uintptr_t *)tricore_csa2addr(val); // 1
+  pucsa = (uintptr_t *)tricore_csa2addr(plcsa[REG_UPCXI]); // 2
 
-  IFX_MTCR(IFX_CPU_FCX, pucsa[REG_UPCXI]);
+  IFX_MTCR(IFX_CPU_FCX, pucsa[REG_UPCXI]); // 3
   IFX_IRQ_ENABLE();
 
   memset(pucsa, 0, XCPTCONTEXT_SIZE);
   memset(plcsa, 0, XCPTCONTEXT_SIZE);
 
-  pucsa[REG_SP]  = sp;
-  pucsa[REG_PSW] = psw;
+  pucsa[REG_SP]  = sp; // 2 ->sp
+  pucsa[REG_PSW] = psw; // 2->psw
 
   /* Save the task entry point */
 
-  pucsa[REG_UPC] = pc;
-  plcsa[REG_LPC] = pc;
+  pucsa[REG_UPC] = pc; // 2->pc
+  plcsa[REG_LPC] = pc; // 1->pc
 
-  plcsa[REG_LPCXI] = (PCXI_UL | tricore_addr2csa(pucsa));
+  plcsa[REG_LPCXI] = (PCXI_UL | tricore_addr2csa(pucsa)); // 1 -> 2
 
   if (!irqsave)
     {
-      plcsa[REG_LPCXI] |= PCXI_PIE;
+      plcsa[REG_LPCXI] |= PCXI_PIE; // IE
     }
 
-  return (uintptr_t *)tricore_addr2csa(plcsa);
+  return (uintptr_t *)tricore_addr2csa(plcsa); // 1
 }
 
 /****************************************************************************

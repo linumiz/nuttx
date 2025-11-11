@@ -24,8 +24,57 @@
  * Included Files
  ****************************************************************************/
 
-#include <nuttx/config.h>
 
+#include <nuttx/config.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <arch/arch.h>
+
+enum tricore_trap_class {
+	TRICORE_CLASS_MMU,
+	TRICORE_CLASS_IP,
+	TRICORE_CLASS_IE,
+	TRICORE_CLASS_CTX,
+	TRICORE_CLASS_BUS,
+	TRICORE_CLASS_ASSERT,
+	TRICORE_CLASS_SYSCALL,
+	TRICORE_CLASS_NMI
+};
+
+
+void tricore_trap_handler(uint32_t class, uint32_t tin)
+{
+#if 0
+  uintptr_t regs;
+  IFX_MFCR(IFX_CPU_PCXI, regs);
+
+  regs = tricore_csa2addr((uintptr_t)regs);
+
+  up_set_current_regs(regs);
+#endif
+
+
+	switch (class) {
+	case TRICORE_CLASS_MMU:
+		break;
+	case TRICORE_CLASS_IP:
+		break;
+	case TRICORE_CLASS_IE:
+		break;
+	case TRICORE_CLASS_CTX:
+		break;
+	case TRICORE_CLASS_BUS:
+		break;
+	case TRICORE_CLASS_ASSERT:
+		break;
+	case TRICORE_CLASS_SYSCALL:
+		tricore_svcall(NULL);
+		break;
+	case TRICORE_CLASS_NMI:
+		break;
+	}
+}
+#if 0
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
@@ -67,3 +116,4 @@ void tricore_trapcall(volatile void *trap)
   up_irq_save();
   PANIC_WITH_REGS("Trap", up_current_regs());
 }
+#endif

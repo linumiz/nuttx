@@ -7,6 +7,11 @@
 #include <tricore_stm.h>
 #include <tricore_internal.h>
 
+#define CLOCKS_PER_SEC          (500 * 1000 * 1000)
+#define CYCLES_PER_TICK (CLOCKS_PER_SEC / 100)
+#define cycle_diff_t    unsigned long
+static uint64_t last_count;
+static uint64_t last_ticks;
 static uint8_t core_id;
 
 static inline uint32_t get_time32(void)
@@ -24,19 +29,33 @@ static inline void set_compare(uint32_t cmp)
 	putreg32(cmp, IFX_STM_CMP0(core_id, IFX_STM_DEFAULT));
 }
 
+
 static int tricore_timerisr(int irq, uint32_t *regs, void *arg)
 {
-	uint32_t val;
+#if 0
 
 	val = getreg32(IFX_STM_CMP0(core_id, IFX_STM_DEFAULT));
 	set_compare((uint32_t)val + CLOCKS_PER_SEC);
+#endif
 
-	nxsched_process_timer();
+	uint32_t val;
 
 	/* clear interrupt */
 	val = getreg32(IFX_STM_ISCR(core_id, IFX_STM_DEFAULT));
 	val |= IFX_STM_ISCR_CMP0IRR;
 	putreg32(val, IFX_STM_ISCR(core_id, IFX_STM_DEFAULT));
+
+	uint64_t now = get_time64();
+	uint64_t dcycles = now - last_count;
+	uint32_t dticks = (cycle_diff_t)dcycles / CYCLES_PER_TICK;
+
+	last_count += (cycle_diff_t)dticks * CYCLES_PER_TICK;
+	last_ticks += dticks;
+
+	uint64_t next = last_count + CYCLES_PER_TICK;
+
+	set_compare((uint32_t)next);
+	nxsched_process_timer();
 
 	return 0;
 }
@@ -53,8 +72,6 @@ static inline unsigned int tricore_get_core_id(void)
 
 void up_timer_initialize(void)
 {
-	uint64_t last_count;
-	uint64_t last_ticks;
 	uint32_t val;
 
 	core_id = tricore_get_core_id();
@@ -68,8 +85,8 @@ void up_timer_initialize(void)
 	val |= IFX_STM_ISCR_CMP0IRR;
 	putreg32(val, IFX_STM_ISCR(core_id, IFX_STM_DEFAULT));
 
-	last_ticks = get_time64() / CLOCKS_PER_SEC;
-	last_count = (last_ticks + 1) * CLOCKS_PER_SEC;
+	last_ticks = get_time64() / CYCLES_PER_TICK;
+	last_count = last_ticks * CYCLES_PER_TICK;
 
 	val = getreg32(IFX_STM_ICR(core_id, IFX_STM_DEFAULT));
 	val &= ~IFX_STM_ICR_CMP0OS;
@@ -77,6 +94,6 @@ void up_timer_initialize(void)
 	putreg32(val, IFX_STM_ICR(core_id, IFX_STM_DEFAULT));
 
 	irq_attach(IFX_STM_IR_SRN(IFX_STM_DEFAULT), (xcpt_t)tricore_timerisr, NULL);
-	set_compare((uint32_t)last_count + CLOCKS_PER_SEC);
+	set_compare((uint32_t)last_count + (CYCLES_PER_TICK * 5));
 	up_enable_irq(IFX_STM_IR_SRN(IFX_STM_DEFAULT));
 }

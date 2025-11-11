@@ -41,12 +41,11 @@
  * \param condition if the value of address matches with the value of condition, then swap of value & address occurs.
  *
  */
-IFX_INLINE unsigned int Ifx__cmpAndSwap (unsigned int volatile *address,
+inline unsigned int Ifx__cmpAndSwap (unsigned int volatile *address,
            unsigned int value, unsigned int condition)
 {
  /* Gnu C compiler with Tricore 1.6 support is required to use cmpswap instruction */
-  __extension__ unsigned long long reg64
-    = value | (unsigned long long) condition << 32;
+  unsigned long long reg64 = value | (unsigned long long) condition << 32;
 
   __asm__ __volatile__ ("cmpswap.w [%[addr]]0, %A[reg]"
                         : [reg] "+d" (reg64)

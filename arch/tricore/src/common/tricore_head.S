@@ -13,6 +13,7 @@ reset cause
  * Public Symbols
  ****************************************************************************/
 
+	.extern btv_vector
 	.section .start, "ax"
 	.global __start; .type __start, %function
 

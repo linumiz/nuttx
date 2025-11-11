@@ -87,6 +87,23 @@ void up_switch_context(struct tcb_s *tcb, struct tcb_s *rtcb)
       /* Then switch contexts */
 
       tricore_switchcontext(&rtcb->xcp.regs, tcb->xcp.regs);
+/*
+D9  from
+D10 to
+
+csa upper -> D9 from D10 to
+csa lower ->
+
+reg csa tupper -> D9 from D10 to
+tupper[D9] = tupper[link] -> upper[]??
+gcurrent = tupper[D10] (to)
+tupper[link] = gcurrent (to)
+
+csa lower <-
+tupper <-
+ret
+a11?*/
+
 
       /* tricore_switchcontext forces a context switch to the task at the
        * head of the ready-to-run list.  It does not 'return' in the

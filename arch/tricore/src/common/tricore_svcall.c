@@ -56,12 +56,14 @@
 
 void tricore_svcall(volatile void *trap)
 {
+  uintptr_t pcxi;
   uintptr_t *regs;
   uint32_t cmd;
 
-  IFX_MFCR(IFX_CPU_PCXI, regs)
+  IFX_MFCR(IFX_CPU_PCXI, pcxi)
 
-  regs = tricore_csa2addr((uintptr_t)regs);
+  regs = tricore_csa2addr(pcxi);
+//  regs = tricore_csa2addr(regs[REG_LPCXI]);
 
   up_set_current_regs(regs);
 
@@ -124,4 +126,6 @@ void tricore_svcall(volatile void *trap)
     }
 
   up_set_current_regs(NULL);
+//      __asm__ __volatile__ ("rslcx" : : : "memory");
+//      __asm__ __volatile__ ("rfe" : : : "memory");
 }
