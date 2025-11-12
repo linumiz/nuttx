@@ -42,7 +42,7 @@
  * Public Functions
  ****************************************************************************/
 
-int tricore_isr_handler(int irq)
+void __attribute__((interrupt_handler)) tricore_isr_handler(int irq)
 {
   struct tcb_s *running_task = g_running_tasks[this_cpu()];
   struct tcb_s *tcb;

@@ -11,8 +11,6 @@ biv_vector:
 1:
 	svlcx
 	j _isr_wrapper
-	rslcx
-	rfe
 
 	.space (32 - (.-1b))
 	.endr
@@ -30,6 +28,6 @@ _isr_wrapper:
 	extr.u	%d15, %d15, 16, 11
 
 	mov	%d4, %d15
-	call	tricore_isr_handler
-	rslcx
-	rfe
+        movh.a  %a14, hi:tricore_isr_handler
+        lea     %a14, [%a14]lo:tricore_isr_handler
+	ji	%a14
