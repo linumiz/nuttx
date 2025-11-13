@@ -130,7 +130,7 @@
 
 /* SVC with SYS_ call number and no parameters */
 
-static inline uintptr_t sys_call0(unsigned int nbr)
+static inline __attribute__((optimize("O0"))) uintptr_t sys_call0(unsigned int nbr)
 {
 #ifdef CONFIG_TRICORE_TOOLCHAIN_TASKING
   register long reg0;
@@ -166,7 +166,7 @@ static inline uintptr_t sys_call0(unsigned int nbr)
 
 /* SVC with SYS_ call number and one parameter */
 
-static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
+static inline __attribute__((optimize("O0"))) uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
 {
 #ifdef CONFIG_TRICORE_TOOLCHAIN_TASKING
   register long reg0;
@@ -204,7 +204,7 @@ static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
 
 /* SVC with SYS_ call number and two parameters */
 
-static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
+static inline __attribute__((optimize("O0"))) uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2)
 {
 #ifdef CONFIG_TRICORE_TOOLCHAIN_TASKING

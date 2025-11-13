@@ -444,13 +444,14 @@ void nxtask_exithook(FAR struct tcb_s *tcb, int status)
   /* Wakeup any tasks waiting for this task to exit */
 
   nxtask_exitwakeup(tcb, status);
-
+  FAR struct tcb_s * volatile ltcb = tcb; //FIXME compiler issue changes d8 in upper context with fcall
   sched_unlock();
 
   /* Leave the task group.  Perhaps discarding any un-reaped child
    * status (no zombies here!)
    */
 
+  tcb = ltcb; // FIXME recover tcb compiler issue
   group_leave(tcb);
 
   /* Deallocate anything left in the TCB's queues */
