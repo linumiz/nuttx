@@ -65,23 +65,41 @@ void tricore_wdt_disable(void)
 #endif
 
 #include <nuttx/bits.h>
-#include <tricore_internal.h>
+#include <nuttx/arch.h>
+#include "tricore_internal.h"
 
-#define IFX_CPU_WDTSYS_CTRLA 0xf00001A8
-#define IFX_CPU_WDTSYS_CTRLB 0xf00001AC
+#define IFX_CPU_WDTSYS_CTRLA  0xf00001A8
+#define IFX_CPU_WDTSYS_CTRLB  0xf00001AC
+
+void tricore_endinit_clear(void)
+{
+  uint32_t ctrla = getreg32(IFX_CPU_WDTSYS_CTRLA);
+
+  ctrla &= ~BIT(0);           /* ENDINIT = 0 */
+  ctrla ^= (0x7fu << 1);      /* toggle PW bits [7:1] */
+
+  putreg32(ctrla, IFX_CPU_WDTSYS_CTRLA);
+}
+
+void tricore_endinit_set(void)
+{
+  uint32_t ctrla = getreg32(IFX_CPU_WDTSYS_CTRLA);
+
+  ctrla |= BIT(0);            /* ENDINIT = 1 */
+  ctrla ^= (0x7fu << 1);      /* toggle PW bits [7:1] */
+
+  putreg32(ctrla, IFX_CPU_WDTSYS_CTRLA);
+}
+
 void tricore_wdt_disable(void)
 {
-	uint32_t ctrla = getreg32(IFX_CPU_WDTSYS_CTRLA);
-	uint32_t ctrlb = getreg32(IFX_CPU_WDTSYS_CTRLB) | BIT(0); // DR = 1;
+  uint32_t ctrlb;
 
-	if (ctrla & BIT(0)) {
-		ctrla &= ~BIT(0);
-		ctrla ^= (0x7f << 1);
-		putreg32(ctrla, IFX_CPU_WDTSYS_CTRLA);
-	}
+  tricore_endinit_clear();
 
-	putreg32(ctrlb, IFX_CPU_WDTSYS_CTRLB);
+  ctrlb = getreg32(IFX_CPU_WDTSYS_CTRLB);
+  ctrlb |= BIT(0);            /* DR = 1 */
+  putreg32(ctrlb, IFX_CPU_WDTSYS_CTRLB);
 
-	ctrla |= BIT(0);
-	putreg32(ctrla, IFX_CPU_WDTSYS_CTRLA);
+//  tricore_endinit_set();
 }

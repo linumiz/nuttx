@@ -257,4 +257,8 @@ size_t tricore_stack_check(uintptr_t alloc, size_t size);
 void tricore_stack_color(void *stackbase, size_t nbytes);
 #endif
 
+void tricore_endinit_clear(void);
+void tricore_endinit_set(void);
+void tricore_wdt_disable(void);
+
 #endif /* __ARCH_TRICORE_SRC_COMMON_TRICORE_INTERNAL_H */

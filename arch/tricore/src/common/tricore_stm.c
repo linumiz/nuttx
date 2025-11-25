@@ -7,8 +7,8 @@
 #include <tricore_stm.h>
 #include <tricore_internal.h>
 
-#define CLOCKS_PER_SEC          (500 * 1000 * 1000)
-#define CYCLES_PER_TICK (CLOCKS_PER_SEC / 100)
+#define CLOCKS_PER_SEC          (500 * 1000 * 1000) // 500 Mhz - STM
+#define CYCLES_PER_TICK (CLOCKS_PER_SEC / 100) // 1Mhz - 2ms
 #define cycle_diff_t    unsigned long
 static uint64_t last_count;
 static uint64_t last_ticks;
