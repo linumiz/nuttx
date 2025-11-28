@@ -33,7 +33,7 @@ static int worker(int argc, char **argv)
     for (volatile int i = 0; i < 2000; i++) {
 	printf("%d\n", i);
     }
-    //usleep(1000);
+    usleep(1000);
   }
 
   return 0;
@@ -44,16 +44,19 @@ int board_app_initialize(uintptr_t arg)
 	bool ledon = true;
 	gpio_pinset_t led1 = GPIO_PAD_CFG(GPIO_PORT3, GPIO_PIN9, GPIO_OUTPUT, GPIO_PAD_CONFIG_OUT_GPIO);
 
+#if 0
 	g_app_pid1 = kthread_create("w1", 100, 2048, worker, NULL);
 	g_app_pid2 = kthread_create("w2", 100, 2048, worker, NULL);
+#endif
 
 	aurix_config_gpio(led1);
 	while (1) {
 		aurix_gpio_write(led1, (ledon = !ledon));
+		usleep(500 * 1000);
+#if 0
 		for (volatile int i = 0; i < 1000; i++) {
 			printf("%d\n", i);
 		}
-#if 0
 		usleep(10000);
 		kill(g_app_pid1, SIGUSR1);
 		usleep(10000);

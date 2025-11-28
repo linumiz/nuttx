@@ -2,13 +2,15 @@
 #include <time.h>
 #include <arch/arch.h>
 #include <nuttx/irq.h>
+#include <nuttx/clock.h>
 
 #include <tricore_irq.h>
 #include <tricore_stm.h>
 #include <tricore_internal.h>
 
-#define CLOCKS_PER_SEC          (500 * 1000 * 1000) // 500 Mhz - STM
-#define CYCLES_PER_TICK (CLOCKS_PER_SEC / 100) // 1Mhz - 2ms
+#define CYCLES_PER_SEC          (500 * 1000 * 1000) // 500 Mhz - STM
+#define CYCLES_PER_TICK		(CONFIG_USEC_PER_TICK * (CYCLES_PER_SEC / USEC_PER_SEC))
+
 #define cycle_diff_t    unsigned long
 static uint64_t last_count;
 static uint64_t last_ticks;
@@ -28,7 +30,6 @@ static inline void set_compare(uint32_t cmp)
 {
 	putreg32(cmp, IFX_STM_CMP0(core_id, IFX_STM_DEFAULT));
 }
-
 
 static int tricore_timerisr(int irq, uint32_t *regs, void *arg)
 {
@@ -55,6 +56,7 @@ static int tricore_timerisr(int irq, uint32_t *regs, void *arg)
 	uint64_t next = last_count + CYCLES_PER_TICK;
 
 	set_compare((uint32_t)next);
+
 	nxsched_process_timer();
 
 	return 0;

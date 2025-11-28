@@ -196,7 +196,7 @@ live:
 	j live
 */
 	call tricore_wdt_disable
-	//call up_clockconfig
+	call up_clockconfig
 	j nx_start
 
 	/* Phase 3: END */
