@@ -7,6 +7,8 @@
 #include <nuttx/board.h>
 #include <nuttx/irq.h>
 
+#include "tc4xx_gpio.h"
+
 int g_app_pid1, g_app_pid2;
 void siguser_action(int signo, siginfo_t *siginfo, void *arg)
 {
@@ -39,10 +41,15 @@ static int worker(int argc, char **argv)
 
 int board_app_initialize(uintptr_t arg)
 {
+	bool ledon = true;
+	gpio_pinset_t led1 = GPIO_PAD_CFG(GPIO_PORT3, GPIO_PIN9, GPIO_OUTPUT, GPIO_PAD_CONFIG_OUT_GPIO);
+
 	g_app_pid1 = kthread_create("w1", 100, 2048, worker, NULL);
 	g_app_pid2 = kthread_create("w2", 100, 2048, worker, NULL);
 
+	aurix_config_gpio(led1);
 	while (1) {
+		aurix_gpio_write(led1, (ledon = !ledon));
 		for (volatile int i = 0; i < 1000; i++) {
 			printf("%d\n", i);
 		}

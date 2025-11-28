@@ -3,3 +3,4 @@
 CHIP_CSRCS += tc4x_clockconfig.c
 # CHIP_CSRCS += tc4x_asclin0_low.c tc4x_lowputc.c
 # CHIP_CSRCS += tc4x_asclin0.c
+CMN_CSRCS += tc4xx_gpio.c
