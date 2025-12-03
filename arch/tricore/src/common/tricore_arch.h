@@ -109,9 +109,6 @@ struct xcptcontext
 };
 #endif /* __ASSEMBLY__ */
 
-#define IFX_CFG_SSW_CSA_BOOT_PTR_START		(0x7010EC00)
-#define IFX_CFG_SSW_CSA_USTACK_PTR		(0x7010EB00)
-#define	IFX_CFG_DSPR0_START			(0x70000000)
 #define IFX_LWSRZ_VMY				(0xF4430c00)
 
 #ifndef __ASSEMBLY__

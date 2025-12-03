@@ -24,8 +24,8 @@ __start:
 		- Should we care use DSPR0?
 		- Fix the address coming from xx?
 	*/
-	movh.a	%a10, hi:(IFX_CFG_SSW_CSA_USTACK_PTR)
-	lea	%a10, [%a10]lo:(IFX_CFG_SSW_CSA_USTACK_PTR)
+	movh.a	%a10, hi:__PSRAM_USTACK
+	lea	%a10, [%a10]lo:__PSRAM_USTACK
 	dsync	/* FIXME why? */
 
 // TODO: disable endinit
@@ -38,8 +38,8 @@ __start:
 
 	/* CSA init to PSPR0 */
 	/* TODO should we use DSPR0 ? */
-	movh.a	%a15, hi:(IFX_CFG_SSW_CSA_BOOT_PTR_START)
-	lea	%a15, [%a15]lo:(IFX_CFG_SSW_CSA_BOOT_PTR_START)
+	movh.a	%a15, hi:__PSRAM_BOOT_CSA
+	lea	%a15, [%a15]lo:__PSRAM_BOOT_CSA
 
 	mov.d   %d14, %a15
 	extr.u  %d13, %d14, 12, 20
@@ -197,7 +197,10 @@ live:
 */
 	call tricore_wdt_disable
 	call up_clockconfig
-	j nx_start
+
+	mfcr %d4, IFX_CPU_CORE_ID
+	extr.u  %d4, %d4, 0, 3
+	j tricore_start
 
 	/* Phase 3: END */
 

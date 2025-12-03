@@ -11,3 +11,10 @@ config TC4XX_CHIP_TC4D7
 		TC4D7 SoC
 
 endchoice
+
+config ARCH_TRICORE_CPU_COUNT
+	int "TRICORE CPU count"
+	default 1
+	---help---
+		Tricore CPU count
+
