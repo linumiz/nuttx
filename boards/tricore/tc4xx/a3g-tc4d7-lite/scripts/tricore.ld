@@ -108,7 +108,7 @@ SECTIONS
 		. = ALIGN(2);
 	} > CODE_MEM
 
-	.data :
+	.data : ALIGN(4)
 	{
 		_sdata = ABSOLUTE(.);
 		*(.data .data.*)
