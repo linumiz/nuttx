@@ -1,4 +1,6 @@
 #include <sys/types.h>
+#include <debug.h>
+#include <sys/sysinfo.h>
 
 #include <nuttx/config.h>
 #include <nuttx/kthread.h>
@@ -41,6 +43,8 @@ static int worker(int argc, char **argv)
 
 int board_app_initialize(uintptr_t arg)
 {
+	uint32_t cnt = 0;
+	struct sysinfo info;
 	bool ledon = true;
 	gpio_pinset_t led1 = GPIO_PAD_CFG(GPIO_PORT3, GPIO_PIN9, GPIO_OUTPUT, GPIO_PAD_CONFIG_OUT_GPIO);
 
@@ -52,6 +56,9 @@ int board_app_initialize(uintptr_t arg)
 	aurix_config_gpio(led1);
 	while (1) {
 		aurix_gpio_write(led1, (ledon = !ledon));
+		//tc4x_asclin0_puts("Hello from NuttX on ASCLIN0!\n");
+		sysinfo(&info);
+		lowsyslog("Hello from NuttX on ASCLIN0 %d -- %lld!\n", cnt++, info.uptime);
 		usleep(500 * 1000);
 #if 0
 		for (volatile int i = 0; i < 1000; i++) {
