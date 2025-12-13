@@ -95,9 +95,7 @@ void up_initialize(void)
 
   /* Initialize the serial device driver */
 
-#ifdef USE_SERIALDRIVER
-  tricore_serialinit();
-#endif
+  tc4x_asclin0_init(115200);
 }
 
 #define IFX_CPUn_REG(n) (0xF8800000 + 0x40000 * n)
