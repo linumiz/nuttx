@@ -98,15 +98,49 @@ void tc4x_osc_init(void)
  * SYSPLL init: fVCO = 20 MHz * 50 / 2 = 500 MHz, fpll0 = 500 MHz
  * -------------------------------------------------------------------------- */
 
-void tc4x_syspll_init(void)
+static void tc4x_syspll_init(void)
 {
-  uint32_t addr;
+  uint32_t con0, con1, stat;
   uint32_t val;
 
-  /* SYSPLLCON0: NDIV, PDIV, power up, restart lock detect */
-  addr = REGADDR(TC4X_CLOCK_SYSPLLCON0_OFFSET);
+  con0 = REGADDR(TC4X_CLOCK_SYSPLLCON0_OFFSET);
+  con1 = REGADDR(TC4X_CLOCK_SYSPLLCON1_OFFSET);
+  stat = REGADDR(TC4X_CLOCK_SYSPLLSTAT_OFFSET);
 
-  val  = 0;
+  val = getreg32(con0);
+  val = ~TC4X_SYSPLLCON0_PLLPWR;
+
+  tc4x_ccu_wait_unlocked();
+  putreg32(val, con0);
+
+  /* Wait for SYSPLL power status */
+  while ((getreg32(stat) & TC4X_PLLSTAT_PWRSTAT) != 0u)
+    {
+      /* spin */
+    }
+
+  /* SYSPLL default */
+  val = 0;
+  val |= FIELD_PREP(TC4X_SYSPLLCON1_K3PREDIV_MASK,
+                    TC4X_SYSPLLCON1_K3PREDIV_SHIFT,
+                    TC4X_SYSPLL_K3PREDIV_DEF);
+
+  tc4x_ccu_wait_unlocked();
+  modreg32(val, TC4X_SYSPLLCON1_K3PREDIV_MASK, con1);
+
+  val = 0;
+  val |= FIELD_PREP(TC4X_SYSPLLCON1_K2DIV_MASK,
+                    TC4X_SYSPLLCON1_K2DIV_SHIFT,
+                    TC4X_SYSPLL_K2DIV_DEF);
+  val |= FIELD_PREP(TC4X_SYSPLLCON1_K3DIV_MASK,
+                    TC4X_SYSPLLCON1_K3DIV_SHIFT,
+                    TC4X_SYSPLL_K3DIV_DEF);
+
+  tc4x_ccu_wait_unlocked();
+  modreg32(val, (TC4X_SYSPLLCON1_K2DIV_MASK | TC4X_SYSPLLCON1_K3DIV_MASK), con1);
+
+  /* SYSPLL init */
+  val = 0;
   val |= FIELD_PREP(TC4X_SYSPLLCON0_NDIV_MASK,
                     TC4X_SYSPLLCON0_NDIV_SHIFT,
                     TC4X_SYSPLL_NDIV - 1u);
@@ -117,50 +151,73 @@ void tc4x_syspll_init(void)
   val |= TC4X_SYSPLLCON0_RESLD;
 
   tc4x_ccu_wait_unlocked();
-  putreg32(val, addr);
+  putreg32(val, con0);
 
   /* Wait for SYSPLL power status */
-  addr = REGADDR(TC4X_CLOCK_SYSPLLSTAT_OFFSET);
-  while ((getreg32(addr) & TC4X_PLLSTAT_PWRSTAT) == 0u)
+  while ((getreg32(stat) & TC4X_PLLSTAT_PWRSTAT) != 1u)
     {
       /* spin */
     }
 
-  /* SYSPLLCON1: K2DIV / K2PREDIV (output divider) */
-  addr = REGADDR(TC4X_CLOCK_SYSPLLCON1_OFFSET);
-
-  val  = 0;
-  val |= FIELD_PREP(TC4X_SYSPLLCON1_K2DIV_MASK,
-                    TC4X_SYSPLLCON1_K2DIV_SHIFT,
-                    TC4X_SYSPLL_K2DIV - 1u);
-  val |= FIELD_PREP(TC4X_SYSPLLCON1_K2PREDIV_MASK,
-                    TC4X_SYSPLLCON1_K2PREDIV_SHIFT,
-                    TC4X_SYSPLL_K2PREDIV - 1u);
-
-  tc4x_ccu_wait_unlocked();
-  putreg32(val, addr);
-
-  /* Wait for SYSPLL lock */
-  addr = REGADDR(TC4X_CLOCK_SYSPLLSTAT_OFFSET);
-  while ((getreg32(addr) & TC4X_PLLSTAT_PLLLOCK) == 0u)
-    {
-      /* spin */
-    }
+  tc4x_busywait(100);
 }
 
 /* --------------------------------------------------------------------------
  * PERPLL init: fVCO = 20 MHz * 40 / 1 = 800 MHz, fpll1 = 160 MHz
  * -------------------------------------------------------------------------- */
 
-void tc4x_perpll_init(void)
+static void tc4x_perpll_init(void)
 {
-  uint32_t addr;
+  uint32_t con0, con1, stat;
   uint32_t val;
 
-  /* PERPLLCON0: NDIV, PDIV, power up, restart lock detect */
-  addr = REGADDR(TC4X_CLOCK_PERPLLCON0_OFFSET);
+  con0 = REGADDR(TC4X_CLOCK_PERPLLCON0_OFFSET);
+  con1 = REGADDR(TC4X_CLOCK_PERPLLCON1_OFFSET);
+  stat = REGADDR(TC4X_CLOCK_PERPLLSTAT_OFFSET);
 
-  val  = 0;
+  val = getreg32(con0);
+  val = ~TC4X_PERPLLCON0_PLLPWR;
+
+  tc4x_ccu_wait_unlocked();
+  putreg32(val, con0);
+
+  /* Wait for PERPLL power status */
+  while ((getreg32(stat) & TC4X_PLLSTAT_PWRSTAT) != 0u)
+    {
+      /* spin */
+    }
+
+  /* PERPLL default */
+  val = 0;
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K2PREDIV_MASK,
+                    TC4X_PERPLLCON1_K2PREDIV_SHIFT,
+                    TC4X_PERPLL_K2PREDIV_DEF);
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K3PREDIV_MASK,
+                    TC4X_PERPLLCON1_K3PREDIV_SHIFT,
+                    TC4X_PERPLL_K3PREDIV_DEF);
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K4PREDIV_MASK,
+                    TC4X_PERPLLCON1_K4PREDIV_SHIFT,
+                    TC4X_PERPLL_K4PREDIV_DEF);
+  tc4x_ccu_wait_unlocked();
+  modreg32(val, (TC4X_PERPLLCON1_K2PREDIV_MASK | TC4X_PERPLLCON1_K3PREDIV_MASK |
+                 TC4X_PERPLLCON1_K4PREDIV_MASK), con1);
+
+  val = 0;
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K2DIV_MASK,
+                    TC4X_PERPLLCON1_K2DIV_SHIFT,
+                    TC4X_PERPLL_K2DIV_DEF);
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K3DIV_MASK,
+                    TC4X_PERPLLCON1_K3DIV_SHIFT,
+                    TC4X_PERPLL_K3DIV_DEF);
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K4DIV_MASK,
+                    TC4X_PERPLLCON1_K4DIV_SHIFT,
+                    TC4X_PERPLL_K4DIV_DEF);
+  tc4x_ccu_wait_unlocked();
+  modreg32(val, (TC4X_PERPLLCON1_K2DIV_MASK | TC4X_PERPLLCON1_K3DIV_MASK |
+                 TC4X_PERPLLCON1_K4DIV_MASK), con1);
+
+ /* PERPLL init */
+  val = 0;
   val |= FIELD_PREP(TC4X_PERPLLCON0_NDIV_MASK,
                     TC4X_PERPLLCON0_NDIV_SHIFT,
                     TC4X_PERPLL_NDIV - 1u);
@@ -171,47 +228,28 @@ void tc4x_perpll_init(void)
   val |= TC4X_PERPLLCON0_RESLD;
 
   tc4x_ccu_wait_unlocked();
-  putreg32(val, addr);
+  putreg32(val, con0);
 
   /* Wait for PERPLL power status */
-  addr = REGADDR(TC4X_CLOCK_PERPLLSTAT_OFFSET);
-  while ((getreg32(addr) & TC4X_PLLSTAT_PWRSTAT) == 0u)
+  while ((getreg32(stat) & TC4X_PLLSTAT_PWRSTAT) != 1u)
     {
       /* spin */
     }
-
-  /* PERPLLCON1: K2DIV / K2PREDIV (output divider) */
-  addr = REGADDR(TC4X_CLOCK_PERPLLCON1_OFFSET);
-
-  val  = 0;
-  val |= FIELD_PREP(TC4X_PERPLLCON1_K2DIV_MASK,
-                    TC4X_PERPLLCON1_K2DIV_SHIFT,
-                    TC4X_PERPLL_K2DIV - 1u);
-  val |= FIELD_PREP(TC4X_PERPLLCON1_K2PREDIV_MASK,
-                    TC4X_PERPLLCON1_K2PREDIV_SHIFT,
-                    TC4X_PERPLL_K2PREDIV - 1u);
-
-  tc4x_ccu_wait_unlocked();
-  putreg32(val, addr);
-
-  /* Wait for PERPLL lock */
-  addr = REGADDR(TC4X_CLOCK_PERPLLSTAT_OFFSET);
-  while ((getreg32(addr) & TC4X_PLLSTAT_PLLLOCK) == 0u)
-    {
-      /* spin */
-    }
+  tc4x_busywait(100);
 }
 
 /* --------------------------------------------------------------------------
  * CCU: program dividers from PLL outputs to domains (SRI/SPB/CPB/...)
  * -------------------------------------------------------------------------- */
-
 void tc4x_ccu_set_dividers(void)
 {
   uint64_t sys_vco;
   uint32_t fsource0;
   uint64_t per_vco;
   uint32_t fsource1;
+  uint32_t fsource2;
+  uint32_t fsource3;
+  uint32_t fsourceppu;
 
   uint32_t fsri_div;
   uint32_t fspb_div;
@@ -229,47 +267,69 @@ void tc4x_ccu_set_dividers(void)
   uint32_t fqspi_div;
   uint32_t fi2c_div;
 
+  uint32_t fmcanxl_div;
+  uint32_t fppu_div;
   uint32_t val;
 
-  /* Rebuild PLL output freqs using compile-time config from header */
-
+  /* 500 Mhz */
   sys_vco = (uint64_t)TC4X_FOSC_HZ *
             (uint64_t)TC4X_SYSPLL_NDIV /
             (uint64_t)TC4X_SYSPLL_PDIV;
+
+  /* 500 Mhz */
   fsource0 = (uint32_t)(sys_vco /
               ((uint64_t)TC4X_SYSPLL_K2DIV * (uint64_t)TC4X_SYSPLL_K2PREDIV));
 
+  /* 500 Mhz */
+  fsourceppu = (uint32_t)(sys_vco /
+              ((uint64_t)TC4X_SYSPLL_K3DIV * (uint64_t)TC4X_SYSPLL_K3PREDIV));
+
+  /* 800 Mhz */
   per_vco = (uint64_t)TC4X_FOSC_HZ *
             (uint64_t)TC4X_PERPLL_NDIV /
             (uint64_t)TC4X_PERPLL_PDIV;
+
+  /* 160 Mhz */
   fsource1 = (uint32_t)(per_vco /
               ((uint64_t)TC4X_PERPLL_K2DIV * (uint64_t)TC4X_PERPLL_K2PREDIV));
 
+  /* 200 Mhz */
+  fsource2 = (uint32_t)(per_vco /
+              ((uint64_t)TC4X_PERPLL_K3DIV * (uint64_t)TC4X_PERPLL_K3PREDIV));
+
+  /* 400 Mhz */
+  fsource3 = (uint32_t)(per_vco /
+              ((uint64_t)TC4X_PERPLL_K4DIV * (uint64_t)TC4X_PERPLL_K4PREDIV));
+
   /* ---- System domain dividers from fsource0 (500 MHz) ---- */
 
-  fsri_div  = DIV_ROUND_UP(fsource0, TC4X_FSRI_TARGET_HZ) & 0xFu;
   fspb_div  = DIV_ROUND_UP(fsource0, TC4X_FSPB_TARGET_HZ) & 0xFu;
-  ftpb_div  = DIV_ROUND_UP(fsource0, TC4X_FTPB_TARGET_HZ) & 0xFu;
+  fsri_div  = DIV_ROUND_UP(fsource0, TC4X_FSRI_TARGET_HZ) & 0xFu;
+  ffsi_div  = DIV_ROUND_UP(fsource0, TC4X_FFSI_TARGET_HZ) & 0xFu;
   fstm_div  = DIV_ROUND_UP(fsource0, TC4X_FSTM_TARGET_HZ) & 0xFu;
-  fleth_div = DIV_ROUND_UP(fsource0, TC4X_FLETH_TARGET_HZ) & 0xFu;
+  fgeth_div = DIV_ROUND_UP(fsource0, TC4X_FGETH_TARGET_HZ) & 0xFu;
+  fmcanh_div = DIV_ROUND_UP(fsource0, TC4X_MCANH_TARGET_HZ) & 0xFu;
+  fmcanxl_div = DIV_ROUND_UP(fsource0, TC4X_CANXL_TARGET_HZ) & 0xFu;
 
-  ffsi_div  = fsri_div;                      /* simple choice */
-  fgeth_div = fleth_div;                     /* same target as lethy */
-  fegtm_div = 1u;                            /* full speed for eGTM */
-  fmcanh_div = DIV_ROUND_UP(fsource0, 100000000u) & 0xFu; /* 100 MHz */
+  ftpb_div  = DIV_ROUND_UP(fsource0, TC4X_FTPB_TARGET_HZ) & 0xFu;
+  fleth_div = DIV_ROUND_UP(fsource0, TC4X_FLETH_TARGET_HZ) & 0xFu;
+  fegtm_div = DIV_ROUND_UP(fsource0, TC4X_EGTM_TARGET_HZ) & 0xFu;
 
   /* ---- Peripheral domain dividers from fsource1 (160 MHz) ---- */
 
-  fmcani_div    = DIV_ROUND_UP(fsource1, 80000000u) & 0xFu; /* 80 MHz */
-  fasclinf_div  = DIV_ROUND_UP(fsource1, 80000000u) & 0xFu; /* 80 MHz */
-  fasclinsi_div = DIV_ROUND_UP(fsource1, 80000000u) & 0xFu; /* 80 MHz */
+  fmcani_div    = DIV_ROUND_UP(fsource1, TC4X_MCANI_TARGET_HZ) & 0xFu;
+  fasclinsi_div = DIV_ROUND_UP(fsource1, TC4X_ASCLINSI_TARGET_HZ) & 0xFu;
 
-  fqspi_div     = DIV_ROUND_UP(fsource1, 200000000u) & 0xFu; /* <= 160, so 1 */
-  fi2c_div      = DIV_ROUND_UP(fsource1, 66666667u) & 0xFu;  /* ~66.7 MHz */
+  /* ---- Peripheral domain dividers from fsource2 (200 MHz) ---- */
+  fi2c_div      = DIV_ROUND_UP(fsource2, TC4X_I2C_TARGET_HZ) & 0xFu;
+  fasclinf_div  = DIV_ROUND_UP(fsource2, TC4X_ASCLINF_TARGET_HZ) & 0xFu;
+  fqspi_div     = DIV_ROUND_UP(fsource2, TC4X_QSPI_TARGET_HZ) & 0xFu;
+
+  /* ---- Peripheral domain dividers from fsourceppu (500 MHz) ---- */
+  fppu_div     = DIV_ROUND_UP(fsourceppu, TC4X_PPU_TARGET_HZ) & 0xFu;
 
   /* ---- Program SYSCCUCON0 ---- */
-
-  val  = 0;
+  val = 0;
   val |= FIELD_PREP(TC4X_SYSCCUCON0_SPBDIV_MASK,
                     TC4X_SYSCCUCON0_SPBDIV_SHIFT,
                     fspb_div);
@@ -295,8 +355,8 @@ void tc4x_ccu_set_dividers(void)
   putreg32(val, REGADDR(TC4X_CLOCK_SYSCCUCON0_OFFSET));
 
   /* ---- Program SYSCCUCON1 ---- */
-
-  val  = 0;
+  val  = getreg32(REGADDR(TC4X_CLOCK_SYSCCUCON1_OFFSET));
+  val = 0;
   val |= FIELD_PREP(TC4X_SYSCCUCON1_GETHDIV_MASK,
                     TC4X_SYSCCUCON1_GETHDIV_SHIFT,
                     fgeth_div);
@@ -309,55 +369,53 @@ void tc4x_ccu_set_dividers(void)
   val |= FIELD_PREP(TC4X_SYSCCUCON1_LETHDIV_MASK,
                     TC4X_SYSCCUCON1_LETHDIV_SHIFT,
                     fleth_div);
-  /* CANXLHDIV left at reset */
+  val |= FIELD_PREP(TC4X_SYSCCUCON1_CANXLHDIV_MASK,
+                    TC4X_SYSCCUCON1_CANXLHDIV_SHIFT,
+                    fmcanxl_div);
   val |= TC4X_SYSCCUCON1_UP;
 
   tc4x_ccu_wait_unlocked();
   putreg32(val, REGADDR(TC4X_CLOCK_SYSCCUCON1_OFFSET));
 
   /* ---- Program PERCCUCON0 ---- */
-
-  val  = 0;
+  tc4x_ccu_wait_unlocked();
+  putreg32(0, REGADDR(TC4X_CLOCK_PERCCUCON0_OFFSET));
+  val  = getreg32(REGADDR(TC4X_CLOCK_PERCCUCON0_OFFSET));
   val |= FIELD_PREP(TC4X_PERCCUCON0_MCANDIV_MASK,
                     TC4X_PERCCUCON0_MCANDIV_SHIFT,
                     fmcani_div);
-  /* CLKSELMCAN = 0: use PERPLL (fsource1) */
   val |= FIELD_PREP(TC4X_PERCCUCON0_CLKSELMCAN_MASK,
                     TC4X_PERCCUCON0_CLKSELMCAN_SHIFT,
-                    0);
-  /* MSCDIV, CLKSELMSC left at reset */
+                    0); /* FIXME */
   val |= FIELD_PREP(TC4X_PERCCUCON0_QSPIDIV_MASK,
                     TC4X_PERCCUCON0_QSPIDIV_SHIFT,
                     fqspi_div);
-  /* CLKSELQSPI = 0: PERPLL */
   val |= FIELD_PREP(TC4X_PERCCUCON0_CLKSELQSPI_MASK,
                     TC4X_PERCCUCON0_CLKSELQSPI_SHIFT,
-                    0);
+                    0); /* FIXME */
   val |= FIELD_PREP(TC4X_PERCCUCON0_I2CDIV_MASK,
                     TC4X_PERCCUCON0_I2CDIV_SHIFT,
                     fi2c_div);
-  /* PPUDIV left at reset */
+  val |= FIELD_PREP(TC4X_PERCCUCON0_PPUDIV_MASK,
+                    TC4X_PERCCUCON0_PPUDIV_SHIFT,
+                    fppu_div);
 
-  // tc4x_ccu_wait_unlocked(); // FIXME something wrong here?
+  tc4x_ccu_wait_unlocked();
   putreg32(val, REGADDR(TC4X_CLOCK_PERCCUCON0_OFFSET));
 
   /* ---- Program PERCCUCON1 ---- */
-
-  val  = 0;
+  tc4x_ccu_wait_unlocked();
+  putreg32(0, REGADDR(TC4X_CLOCK_PERCCUCON1_OFFSET));
+  val  = getreg32(REGADDR(TC4X_CLOCK_PERCCUCON1_OFFSET));
   val |= FIELD_PREP(TC4X_PERCCUCON1_ASCLINFDIV_MASK,
                     TC4X_PERCCUCON1_ASCLINFDIV_SHIFT,
                     fasclinf_div);
   val |= FIELD_PREP(TC4X_PERCCUCON1_ASCLINSDIV_MASK,
                     TC4X_PERCCUCON1_ASCLINSDIV_SHIFT,
                     fasclinsi_div);
-  /* CLKSELASCLINS = 0: PERPLL */
   val |= FIELD_PREP(TC4X_PERCCUCON1_CLKSELASCLINS_MASK,
                     TC4X_PERCCUCON1_CLKSELASCLINS_SHIFT,
-                    0);
-  /* CANXL, ADC, ERAY, xSPI, SDMMC, HSCT, LETH100 power bits left as needed.
-   * For now, we only ensure LETH100 is on if you want Ethernet 100M.
-   */
-  val |= TC4X_PERCCUCON1_LETH100PERON;
+                    0x1); /* FIXME */
 
   tc4x_ccu_wait_unlocked();
   putreg32(val, REGADDR(TC4X_CLOCK_PERCCUCON1_OFFSET));
@@ -367,72 +425,232 @@ void tc4x_ccu_set_dividers(void)
  * Select root sources: system from SYSPLL, peripheral from PERPLL
  * -------------------------------------------------------------------------- */
 
-void tc4x_select_sources(void)
+static void tc4x_set_rootclk_source(enum tc4x_rootclk_domain dom,
+                                    enum tc4x_clk_source src)
 {
   uint32_t addr = REGADDR(TC4X_CLOCK_CCUCON_OFFSET);
   uint32_t val  = getreg32(addr);
 
-  /* SYS clock source */
-  val &= ~TC4X_CCUCON_CLKSELS_MASK;
-  val |= FIELD_PREP(TC4X_CCUCON_CLKSELS_MASK,
-                    TC4X_CCUCON_CLKSELS_SHIFT,
-                    TC4X_SYSCLK_SOURCE_PLL);
+  switch (dom)
+    {
+      case TC4X_ROOTCLK_SYS:
+        val &= ~TC4X_CCUCON_CLKSELS_MASK;
+        val |= FIELD_PREP(TC4X_CCUCON_CLKSELS_MASK,
+                          TC4X_CCUCON_CLKSELS_SHIFT,
+                          (uint32_t)src);
+        break;
 
-  /* PER clock source */
-  val &= ~TC4X_CCUCON_CLKSELP_MASK;
-  val |= FIELD_PREP(TC4X_CCUCON_CLKSELP_MASK,
-                    TC4X_CCUCON_CLKSELP_SHIFT,
-                    TC4X_PERCLK_SOURCE_PLL);
+      case TC4X_ROOTCLK_PER:
+        val &= ~TC4X_CCUCON_CLKSELP_MASK;
+        val |= FIELD_PREP(TC4X_CCUCON_CLKSELP_MASK,
+                          TC4X_CCUCON_CLKSELP_SHIFT,
+                          (uint32_t)src);
+        break;
+    }
 
   tc4x_ccu_wait_unlocked();
   putreg32(val, addr);
+}
+
+static void tc4x_set_sysclk_source(enum tc4x_clk_source src)
+{
+  tc4x_set_rootclk_source(TC4X_ROOTCLK_SYS, src);
+}
+
+static void tc4x_set_perclk_source(enum tc4x_clk_source src)
+{
+  tc4x_set_rootclk_source(TC4X_ROOTCLK_PER, src);
+}
+
+static void tc4x_ramposc_init(void)
+{
+  uint32_t con, stat;
+  uint32_t val;
+
+  con = REGADDR(TC4X_CLOCK_RAMPCON0_OFFSET);
+  val  = getreg32(con);
+
+  val  |= TC4X_RAMPCON0_PWR;
+
+  tc4x_ccu_wait_unlocked();
+  putreg32(val, con);
+
+  stat = REGADDR(TC4X_CLOCK_RAMPSTAT_OFFSET);
+  while (((getreg32(stat) & TC4X_RAMPSTAT_ACTIVE) >> TC4X_RAMPSTAT_ACTIVE_SHIFT) != 1)
+    {
+      /* spin */
+    }
+
+  while (!((getreg32(stat) & TC4X_RAMPSTAT_FSTAT) >> TC4X_RAMPSTAT_FSTAT_SHIFT))
+    {
+      /* spin */
+    }
+
+  if (((getreg32(stat) & TC4X_RAMPSTAT_FSTAT) >> TC4X_RAMPSTAT_FSTAT_SHIFT) != 1)
+    {
+      val = getreg32(con);
+      val |= TC4X_RAMPCON0_CMD_BOTTOM;
+
+      tc4x_ccu_wait_unlocked();
+      putreg32(val, con);
+
+      while (getreg32(stat) & TC4X_RAMPSTAT_FLLLOCK)
+        {
+          /* spin */
+        }
+    }
+}
+
+static void tc4x_ramposc_move(void)
+{
+  uint32_t con, stat;
+  uint32_t val;
+
+  con = REGADDR(TC4X_CLOCK_RAMPCON0_OFFSET);
+  stat = REGADDR(TC4X_CLOCK_RAMPSTAT_OFFSET);
+
+  val = getreg32(stat);
+  if ((val & TC4X_RAMPSTAT_ACTIVE) &&
+       (val & TC4X_RAMPSTAT_SSTAT) &&
+       ((val & TC4X_RAMPSTAT_FSTAT) >> TC4X_RAMPSTAT_FSTAT_SHIFT) != 1)
+    {
+      return;
+    }
+
+  val  = 0;
+  val |= TC4X_RAMPCON0_PWR;
+  val |= FIELD_PREP(TC4X_RAMPCON0_UFL_MASK,
+                    TC4X_RAMPCON0_UFL_SHIFT,
+                    500);
+  val |= FIELD_PREP(TC4X_RAMPCON0_CMD_MASK,
+                    TC4X_RAMPCON0_CMD_SHIFT,
+                    1);
+
+  tc4x_ccu_wait_unlocked();
+  putreg32(val, con);
+  tc4x_busywait(100000);
+}
+
+static void tc4x_set_syspll_divider(void)
+{
+  uint32_t con1;
+  uint32_t val;
+
+  con1 = REGADDR(TC4X_CLOCK_SYSPLLCON1_OFFSET);
+
+  /* SYSPLL default */
+  val = 0;
+  val |= FIELD_PREP(TC4X_SYSPLLCON1_K3PREDIV_MASK,
+                    TC4X_SYSPLLCON1_K3PREDIV_SHIFT,
+                    1);
+
+  tc4x_ccu_wait_unlocked();
+  modreg32(val, TC4X_SYSPLLCON1_K3PREDIV_MASK, con1);
+  tc4x_busywait(100);
+
+  val = 0;
+  val |= FIELD_PREP(TC4X_SYSPLLCON1_K2DIV_MASK,
+                    TC4X_SYSPLLCON1_K2DIV_SHIFT,
+                    0);
+  val |= FIELD_PREP(TC4X_SYSPLLCON1_K3DIV_MASK,
+                    TC4X_SYSPLLCON1_K3DIV_SHIFT,
+                    0);
+
+  tc4x_ccu_wait_unlocked();
+  modreg32(val, (TC4X_SYSPLLCON1_K2DIV_MASK | TC4X_SYSPLLCON1_K3DIV_MASK), con1);
+}
+
+static void tc4x_set_perpll_divider(void)
+{
+  uint32_t con1;
+  uint32_t val;
+
+  con1 = REGADDR(TC4X_CLOCK_PERPLLCON1_OFFSET);
+
+  val = 0;
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K2PREDIV_MASK,
+                    TC4X_PERPLLCON1_K2PREDIV_SHIFT,
+                    0);
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K3PREDIV_MASK,
+                    TC4X_PERPLLCON1_K3PREDIV_SHIFT,
+                    TC4X_PERPLL_K3PREDIV_DEF);
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K4PREDIV_MASK,
+                    TC4X_PERPLLCON1_K4PREDIV_SHIFT,
+                    TC4X_PERPLL_K4PREDIV_DEF);
+  tc4x_ccu_wait_unlocked();
+  modreg32(val, (TC4X_PERPLLCON1_K2PREDIV_MASK | TC4X_PERPLLCON1_K3PREDIV_MASK |
+                 TC4X_PERPLLCON1_K4PREDIV_MASK), con1);
+
+  val = 0;
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K2DIV_MASK,
+                    TC4X_PERPLLCON1_K2DIV_SHIFT,
+                    TC4X_PERPLL_K2DIV - 1u);
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K3DIV_MASK,
+                    TC4X_PERPLLCON1_K3DIV_SHIFT,
+                    TC4X_PERPLL_K3DIV - 1u);
+  val |= FIELD_PREP(TC4X_PERPLLCON1_K4DIV_MASK,
+                    TC4X_PERPLLCON1_K4DIV_SHIFT,
+                    TC4X_PERPLL_K4DIV - 1u);
+  tc4x_ccu_wait_unlocked();
+  modreg32(val, (TC4X_PERPLLCON1_K2DIV_MASK | TC4X_PERPLLCON1_K3DIV_MASK |
+                 TC4X_PERPLLCON1_K4DIV_MASK), con1);
+
 }
 
 /* --------------------------------------------------------------------------
  * Public entry point
  * -------------------------------------------------------------------------- */
 
-#if 0
-#define PORT_BASE(port)		0xF003A000 + (port * 0x400)
-#define PORT_OMR(port)		PORT_BASE(port) + 0x3C
-#define PORT_PADCFG(port, pin)	PORT_BASE(port) + 0x304 + (pin * 0x10)
-static void tc4x_led_blink(uint32_t port, uint32_t pin)
-{
-
-	uint32_t extcon = REGADDR(TC4X_CLOCK_EXTCON_OFFSET);
-	tc4x_ccu_wait_unlocked();
-	putreg32(BIT(0), extcon);
-
-//	uint32_t mask = GENMASK(7, 4) | GENMASK(1, 0);
-	uint32_t mode = 6;
-//	void *addr = PORT_PADCFG(port, pin);
-	void *addr = 0xF003FF14;
-
-//	modreg32(mode, mask, addr);
-	//putreg32(mode << 4 | BIT(0), addr);
-	tc4x_ccu_wait_unlocked();
-	putreg32(0x61, addr);
-	tc4x_busywait(100000);
-	while (1) {
-		putreg32(BIT(pin) | BIT(pin + 16), PORT_OMR(port));
-		tc4x_busywait(100000 * 100);
-	}
-}
-tc4x_led_blink(23, 1);
-#endif
-
 void up_clockconfig(void)
 {
+  uint32_t stat;
+  uint32_t val;
+
   /* External oscillator */
   tc4x_osc_init();
 
-  /* PLLs */
+  /* RAMP oscillator */
+  tc4x_ramposc_init();
+
+  /* SYSPLL */
   tc4x_syspll_init();
+
+  /* PERPLL*/
   tc4x_perpll_init();
 
   /* CCU dividers for CPU + bus + periph clocks */
   tc4x_ccu_set_dividers();
 
+  /* RAMP oscillator move */
+  tc4x_ramposc_move();
+
+  stat = REGADDR(TC4X_CLOCK_RAMPSTAT_OFFSET);
+  val = getreg32(stat);
+  if (((val & TC4X_RAMPSTAT_FLLLOCK) >> TC4X_RAMPSTAT_FLLLOCK_SHIFT) != 1)
+    {
+      return;
+    }
+
+  stat = REGADDR(TC4X_CLOCK_SYSPLLSTAT_OFFSET);
+  val = getreg32(stat);
+  if (((val & TC4X_PLLSTAT_PLLLOCK) >> TC4X_PLLSTAT_PLLLOCK_SHIFT) != 1)
+    {
+      return;
+    }
+
+  stat = REGADDR(TC4X_CLOCK_PERPLLSTAT_OFFSET);
+  val = getreg32(stat);
+  if (((val & TC4X_PLLSTAT_PLLLOCK) >> TC4X_PLLSTAT_PLLLOCK_SHIFT) != 1)
+    {
+      return;
+    }
+
+  /* SYSPLL divider */
+  tc4x_set_syspll_divider();
   /* Select PLLs as clock sources */
-  tc4x_select_sources();
+  tc4x_set_sysclk_source(TC4X_CLK_SOURCE_PLL);
+
+  /* PERPLL divider */
+  tc4x_set_perpll_divider();
+  tc4x_set_perclk_source(TC4X_CLK_SOURCE_PLL);
 }

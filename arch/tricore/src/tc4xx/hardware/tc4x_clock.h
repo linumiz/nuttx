@@ -97,7 +97,12 @@
 #define TC4X_RAMPCON0_CMD_BOTTOM  (2u << TC4X_RAMPCON0_CMD_SHIFT)
 
 /* RAMPSTAT fields */
+#define TC4X_RAMPSTAT_FSTAT_SHIFT 16
+#define TC4X_RAMPSTAT_FSTAT       GENMASK(17, 16)
+#define TC4X_RAMPSTAT_SSTAT       GENMASK(21, 20)
+#define TC4X_RAMPSTAT_ACTIVE_SHIFT 23
 #define TC4X_RAMPSTAT_ACTIVE      BIT(23)
+#define TC4X_RAMPSTAT_FLLLOCK_SHIFT 24
 #define TC4X_RAMPSTAT_FLLLOCK     BIT(24)
 
 /* SYSPLLCON0 fields */
@@ -142,6 +147,7 @@
 
 /* SYSPLLSTAT / PERPLLSTAT common bits */
 #define TC4X_PLLSTAT_PWRSTAT      BIT(0)
+#define TC4X_PLLSTAT_PLLLOCK_SHIFT     1
 #define TC4X_PLLSTAT_PLLLOCK      BIT(1)
 
 /* CCUCON fields */
@@ -150,18 +156,18 @@
 #define TC4X_CCUCON_CLKSELP_SHIFT 16
 #define TC4X_CCUCON_CLKSELP_MASK  GENMASK(16, 16)
 
-/* Encodings for sources */
-enum tc4x_sysclk_source
+/* Common source encodings (same for SYSCLK and PERCLK) */
+enum tc4x_clk_source
 {
-  TC4X_SYSCLK_SOURCE_PLL   = 0,  /* PLL0 */
-  TC4X_SYSCLK_SOURCE_FBACK = 1,  /* backup clock */
-  TC4X_SYSCLK_SOURCE_FRAMP = 2,  /* ramp oscillator */
+  TC4X_CLK_SOURCE_PLL   = 0,  /* SYS: PLL0, PER: PERPLL */
+  TC4X_CLK_SOURCE_FBACK = 1,  /* backup clock */
+  TC4X_CLK_SOURCE_FRAMP = 2,  /* ramp oscillator */
 };
 
-enum tc4x_perclk_source
+enum tc4x_rootclk_domain
 {
-  TC4X_PERCLK_SOURCE_PLL   = 0,  /* PERPLL */
-  TC4X_PERCLK_SOURCE_FBACK = 1,  /* backup clock */
+  TC4X_ROOTCLK_SYS,
+  TC4X_ROOTCLK_PER,
 };
 
 /* CCUSTAT fields */
@@ -194,7 +200,7 @@ enum tc4x_perclk_source
 #define TC4X_SYSCCUCON1_LETHDIV_SHIFT    20
 #define TC4X_SYSCCUCON1_LETHDIV_MASK     GENMASK(23, 20)
 #define TC4X_SYSCCUCON1_CANXLHDIV_SHIFT  24
-#define TC4X_SYSCCUCON1_CANXLHDIV_MASK   GENMASK(27, 24)  /* <- this one */
+#define TC4X_SYSCCUCON1_CANXLHDIV_MASK   GENMASK(27, 24)
 #define TC4X_SYSCCUCON1_UP               BIT(30)
 
 /* PERCCUCON0 fields */
@@ -247,20 +253,48 @@ enum tc4x_perclk_source
 #define TC4X_SYSPLL_NDIV        20u
 #define TC4X_SYSPLL_K2DIV       1u
 #define TC4X_SYSPLL_K2PREDIV    1u
+#define TC4X_SYSPLL_K3DIV       1u
+#define TC4X_SYSPLL_K3PREDIV    1u
+
+#define TC4X_SYSPLL_K2DIV_DEF       1u
+#define TC4X_SYSPLL_K3DIV_DEF       1u
+#define TC4X_SYSPLL_K3PREDIV_DEF    10u
 
 /* PERPLL: fVCO = 25 MHz * 32 / 1 = 800 MHz, K2=5 => 160 MHz */
 #define TC4X_PERPLL_PDIV        1u
 #define TC4X_PERPLL_NDIV        32u
 #define TC4X_PERPLL_K2DIV       5u
 #define TC4X_PERPLL_K2PREDIV    1u
+#define TC4X_PERPLL_K3DIV       2u
+#define TC4X_PERPLL_K3PREDIV    2u
+#define TC4X_PERPLL_K4DIV       1u
+#define TC4X_PERPLL_K4PREDIV    2u
+
+#define TC4X_PERPLL_K2DIV_DEF       1u
+#define TC4X_PERPLL_K3DIV_DEF       1u
+#define TC4X_PERPLL_K4DIV_DEF       1u
+
+#define TC4X_PERPLL_K2PREDIV_DEF    1u
+#define TC4X_PERPLL_K3PREDIV_DEF    10u
+#define TC4X_PERPLL_K4PREDIV_DEF    1u
 
 /* Target frequencies for key domains (unchanged) */
-#define TC4X_FSRI_TARGET_HZ     500000000u
-#define TC4X_FSPB_TARGET_HZ     100000000u
-#define TC4X_FCPB_TARGET_HZ     100000000u
-#define TC4X_FTPB_TARGET_HZ     250000000u
-#define TC4X_FSTM_TARGET_HZ     500000000u
-#define TC4X_FLETH_TARGET_HZ    125000000u
+#define TC4X_EGTM_TARGET_HZ     500000000u /* 500 MHz */
+#define TC4X_FSRI_TARGET_HZ     500000000u /* 500 MHz */
+#define TC4X_FFSI_TARGET_HZ     100000000u /* 100 MHz */
+#define TC4X_FSPB_TARGET_HZ     100000000u /* 100 MHz */
+#define TC4X_FTPB_TARGET_HZ     250000000u /* 250 MHz */
+#define TC4X_FSTM_TARGET_HZ     500000000u /* 500 MHz */
+#define TC4X_FLETH_TARGET_HZ    125000000u /* 125 MHz */
+#define TC4X_FGETH_TARGET_HZ    250000000u /* 250 MHz */
+#define TC4X_CANXL_TARGET_HZ    250000000u /* 250 MHz */
+#define TC4X_MCANH_TARGET_HZ    100000000u /* 100 MHz */
+#define TC4X_MCANI_TARGET_HZ    80000000u  /* 80 MHz */
+#define TC4X_ASCLINSI_TARGET_HZ 80000000u  /* 80 MHz */
+#define TC4X_ASCLINF_TARGET_HZ  200000000u /* 200 MHz */
+#define TC4X_QSPI_TARGET_HZ     200000000u /* 200 MHz */
+#define TC4X_I2C_TARGET_HZ     66666667u /* 66.6 MHz */
+#define TC4X_PPU_TARGET_HZ     454545454u /* 45.45 MHz */
 
 /* FIXME test fragments only */
 /* External clock control register (EXTCON) */
