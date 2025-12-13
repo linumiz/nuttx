@@ -87,7 +87,7 @@ int aurix_config_gpio(gpio_pinset_t pinset)
         {
           /* Configure the pin as a peripheral */
           regaddr = TC4X_PORTn_CCR(GPIO_PORT(pinset), GPIO_PIN(pinset));
-          regval = pinset & (GPIO_PAD_CONFIG_MASK | BIT(0));
+          regval = (pinset & GPIO_PAD_CONFIG_MASK) | BIT(0);
           modreg32(regval, (GPIO_PAD_CONFIG_MASK | BIT(0)), regaddr);
         }
         break;
