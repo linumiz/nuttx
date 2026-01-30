@@ -21,8 +21,9 @@
 #ifndef __ARCH_TRICORE_INCLUDE_BARRIERS_H
 #define __ARCH_TRICORE_INCLUDE_BARRIERS_H
 
+#include <stdint.h>
+#include <stddef.h>
+
 #define UP_DSB() __asm__ __volatile__ ("dsync" : : : "memory")
-#define UP_DMB() __asm("":::"memory")
-
+#define UP_DMB() __asm__ __volatile__ ("":::"memory")
 #endif /* __ARCH_TRICORE_INCLUDE_BARRIERS_H */
-

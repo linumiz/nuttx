@@ -363,6 +363,35 @@ config ENCX24J600_REGDEBUG
 
 endif # ENCX24J600
 
+menuconfig NET_DWXGMAC
+	bool "Designware XGMAC Ethernet"
+	default n
+	---help---
+		Designware XGMAC Ethernet support.
+
+if NET_DWXGMAC
+config ETH_DWMAC_NUM_RX_DMA_DESCRIPTORS
+	int "dwmac RX DMA descriptors count"
+	default 2
+
+
+config ETH_DWMAC_NUM_TX_DMA_DESCRIPTORS
+	int "dwmac TX DMA descriptors count"
+	default 2
+
+config DWXGMAC_BASE
+	hex "DWXGMAC base address"
+
+config DWXGMAC_DMA_BASE
+	hex "DWXGMAC base address"
+
+config DWXGMAC_NETHERNET
+	int "DWXGMAC number of instance"
+	default 1
+
+endif # DWXGMAC
+
+
 menuconfig NET_FTMAC100
 	bool "Faraday 10/100 Ethernet"
 	default n

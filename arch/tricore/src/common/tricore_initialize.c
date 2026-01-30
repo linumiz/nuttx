@@ -160,6 +160,7 @@ void tricore_start(int current_cpu)
 
 	/* Start other core from cpu 0 */
 	if (current_cpu == 0) {
+		tricore_enable_sfr_access(0);
 		for (int i = 1; i < CONFIG_ARCH_TRICORE_CPU_COUNT; i++) {
 			tricore_enable_sfr_access(i);
 			hreg = IFX_CPU_BOOTCON(i);
@@ -172,4 +173,19 @@ void tricore_start(int current_cpu)
 	}
 
 	nx_start();
+}
+
+uint32_t xgmac_read(uintptr_t reg)
+{
+  return getreg32(reg);
+}
+
+void xgmac_write(uint32_t value, uintptr_t reg)
+{
+  putreg32(value, reg);
+}
+
+void xgmac_modreg(uint32_t value, uint32_t mask, uintptr_t reg)
+{
+  modreg32(value, mask, reg);
 }
