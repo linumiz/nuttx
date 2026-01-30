@@ -18,3 +18,6 @@ config ARCH_TRICORE_CPU_COUNT
 	---help---
 		Tricore CPU count
 
+config TC4XX_MDIO
+	bool "TRICORE TC4XX mdio"
+	default n

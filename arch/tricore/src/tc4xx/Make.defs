@@ -3,3 +3,7 @@
 CHIP_CSRCS += tc4x_clockconfig.c
 CMN_CSRCS += tc4xx_gpio.c
 CMN_CSRCS += tc4xx_serial.c
+
+ifeq ($(CONFIG_TC4XX_MDIO),y)
+CMN_CSRCS += tricore_mdio.c
+endif
