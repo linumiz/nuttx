@@ -42,6 +42,7 @@
 #define TC4X_PORTn_OUT(n)		(TC4X_PORT_ADDR(n) + 0x20)
 #define TC4X_PORTn_IN(n)		(TC4X_PORT_ADDR(n) + 0x24)
 #define TC4X_PORTn_HWSEL(n)		(TC4X_PORT_ADDR(n) + 0x28)
+#define TC4X_PORTn_PCRSEL(n)		(TC4X_PORT_ADDR(n) + 0x34)
 #define TC4X_PORTn_OMR(n)		(TC4X_PORT_ADDR(n) + 0x3c)
 #define TC4X_PORTn_CCR(n, pin)		(TC4X_PORT_ADDR(n) + 0x304 + (pin * 0x10))
 #define TC4X_PORTn_LDO(n)		(TC4X_PORT_ADDR(n) + 0x190)
@@ -113,6 +114,7 @@
 #  define GPIO_INPUT           (0u << GPIO_MODE_SHIFT) /* GPIO input */
 #  define GPIO_OUTPUT          (1u << GPIO_MODE_SHIFT) /* GPIO output */
 #  define GPIO_PERIPH          (2u << GPIO_MODE_SHIFT) /* Peripheral */
+#  define GPIO_PERIPH_OWN_PAD  (3u << GPIO_MODE_SHIFT) /* Peripheral directly control pad */
 
 
 /* PAD Configurations Selection:

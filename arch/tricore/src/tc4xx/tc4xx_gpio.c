@@ -55,7 +55,7 @@ static spinlock_t g_aurix_gpio_lock = SP_UNLOCKED;
  *
  ****************************************************************************/
 
-int aurix_config_gpio(gpio_pinset_t pinset)
+int __attribute__((optimize("O0"))) aurix_config_gpio(gpio_pinset_t pinset)
 {
   irqstate_t flags;
   int ret;
@@ -82,6 +82,15 @@ int aurix_config_gpio(gpio_pinset_t pinset)
           modreg32(BIT(0), (GPIO_PAD_CONFIG_MASK | BIT(0)), regaddr);
         }
         break;
+
+      case GPIO_PERIPH_OWN_PAD:
+        {
+
+	  regaddr = TC4X_PORTn_PCRSEL(GPIO_PORT(pinset));
+          regval = BIT(GPIO_PIN(pinset));
+          modreg32(regval, regval, regaddr);
+        }
+        /* fall through */
 
       case GPIO_PERIPH:
         {
