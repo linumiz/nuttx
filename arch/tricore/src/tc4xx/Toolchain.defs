@@ -20,7 +20,12 @@
 #
 ############################################################################
 
+ifeq ($(CONFIG_TRICORE_TOOLCHAIN_LLVM),y)
+ARCHCPUFLAGS += -march=tc18 -Wno-error=implicit-function-declaration
+ARCHCPUFLAGS += -mcpu=tc4xx
+else
 ARCHCPUFLAGS += -mtc18
 ARCHCPUFLAGS += -mcpu=tc4DAx
+endif
 
 include $(TOPDIR)/arch/tricore/src/common/Toolchain.defs

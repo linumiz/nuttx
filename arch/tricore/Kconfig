@@ -53,18 +53,40 @@ source "arch/tricore/src/tc4xx/Kconfig"
 
 choice
 	prompt "Tricore Toolchain Selection"
-	default TRICORE_TOOLCHAIN_GNU
+	default TRICORE_TOOLCHAIN_LLVM
+
+config TRICORE_TOOLCHAIN_GNUC
+	bool "GNU GCC Toolchain"
+	---help---
+		Use the open-source GNU GCC toolchain for Tricore.
+		This requires tricore-elf-gcc to be installed.
+
+config TRICORE_TOOLCHAIN_LLVM
+	bool "HighTec LLVM Toolchain"
+	---help---
+		Use the HighTec closed-source LLVM/Clang toolchain for Tricore.
+		This is the commercial toolchain provided by HighTec.
+
+		The toolchain must be installed at:
+		/opt/tooling/tricore-llvm/toolchains/tricore/v10.1.0
+
+		Or set LLVM_TOOLCHAIN_PATH in your environment to the installation path.
 
 config TRICORE_TOOLCHAIN_TASKING
-	bool "AURIX Tasking C/C++ toolchain"
-	select ARCH_TOOLCHAIN_TASKING
-
-config TRICORE_TOOLCHAIN_GNU
-	bool "Generic GNU toolchain"
-	select ARCH_TOOLCHAIN_GNU
+	bool "Tasking Toolchain"
 	---help---
-		This option should work for any modern GNU toolchain (GCC 4.5 or newer)
+		Use the Tasking toolchain for Tricore.
 
-endchoice # Tricore Toolchain Selection
+endchoice
+
+config TRICORE_LLVM_TOOLCHAIN_PATH
+	string "HighTec LLVM Toolchain Path"
+	default "/opt/tooling/tricore-llvm/toolchains/tricore/v10.1.0"
+	depends on TRICORE_TOOLCHAIN_LLVM
+	---help---
+		Path to the HighTec LLVM toolchain installation directory.
+		The toolchain binaries should be in $(path)/bin/
+
+		Default: /opt/tooling/tricore-llvm/toolchains/tricore/v10.1.0
 
 endif # ARCH_TRICORE

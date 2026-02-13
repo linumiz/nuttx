@@ -1,0 +1,224 @@
+############################################################################
+# arch/tricore/src/common/ToolchainLLVM.defs
+#
+# HighTec LLVM/Clang toolchain configuration for Tricore
+#
+############################################################################
+
+#
+# HighTec LLVM Toolchain Configuration
+#
+# This file configures the HighTec closed-source LLVM toolchain for Tricore.
+# The toolchain uses clang as the compiler and lld as the linker.
+#
+# Each toolchain definition should set:
+#
+#  CROSSDEV         The toolchain path prefix
+#  ARCHCPUFLAGS     CPU-specific flags selecting the instruction set
+#  ARCHOPTIMIZATION The optimization level that results in reliable code generation
+#
+
+# Toolchain path - adjust if needed
+LLVM_TOOLCHAIN_PATH ?= /opt/tooling/tricore-llvm/toolchains/tricore/v10.1.0
+
+# Optimization levels
+
+ifeq ($(CONFIG_DEBUG_CUSTOMOPT),y)
+  ARCHOPTIMIZATION += $(CONFIG_DEBUG_OPTLEVEL)
+else ifeq ($(CONFIG_DEBUG_FULLOPT),y)
+  ARCHOPTIMIZATION += -Os
+endif
+
+ifneq ($(CONFIG_DEBUG_NOOPT),y)
+  ARCHOPTIMIZATION += -fno-strict-aliasing
+endif
+
+ifeq ($(CONFIG_FRAME_POINTER),y)
+  ARCHOPTIMIZATION += -fno-omit-frame-pointer -fno-optimize-sibling-calls
+else
+  ARCHOPTIMIZATION += -fomit-frame-pointer
+endif
+
+ifeq ($(CONFIG_STACK_CANARIES),y)
+  ARCHOPTIMIZATION += $(patsubst "%",%,$(CONFIG_STACK_CANARIES_LEVEL))
+endif
+
+ifeq ($(CONFIG_STACK_USAGE),y)
+  ARCHOPTIMIZATION += -fstack-usage
+endif
+
+ifneq ($(CONFIG_STACK_USAGE_WARNING),0)
+  ARCHOPTIMIZATION += -Wstack-usage=$(CONFIG_STACK_USAGE_WARNING)
+endif
+
+ifeq ($(CONFIG_COVERAGE_ALL),y)
+  ARCHOPTIMIZATION += -fprofile-arcs -ftest-coverage -fno-inline
+endif
+
+ifeq ($(CONFIG_MM_UBSAN_ALL),y)
+  ARCHOPTIMIZATION += $(CONFIG_MM_UBSAN_OPTION)
+endif
+
+ifeq ($(CONFIG_MM_UBSAN_TRAP_ON_ERROR),y)
+  ARCHOPTIMIZATION += -fsanitize-undefined-trap-on-error
+endif
+
+ifeq ($(CONFIG_MM_KASAN_INSTRUMENT_ALL),y)
+  ARCHOPTIMIZATION += -fsanitize=kernel-address
+endif
+
+ifeq ($(CONFIG_MM_KASAN_GLOBAL),y)
+  ARCHOPTIMIZATION += -mllvm -asan-globals=1
+endif
+
+ifeq ($(CONFIG_MM_KASAN_DISABLE_READS_CHECK),y)
+  ARCHOPTIMIZATION += -mllvm -asan-instrument-reads=0
+endif
+
+ifeq ($(CONFIG_MM_KASAN_DISABLE_WRITES_CHECK),y)
+  ARCHOPTIMIZATION += -mllvm -asan-instrument-writes=0
+endif
+
+# Instrumentation options
+
+ifeq ($(CONFIG_ARCH_INSTRUMENT_ALL),y)
+  ARCHOPTIMIZATION += -finstrument-functions
+endif
+
+ifeq ($(CONFIG_LTO_THIN),y)
+  ARCHOPTIMIZATION += -flto=thin
+else ifeq ($(CONFIG_LTO_FULL),y)
+  ARCHOPTIMIZATION += -flto
+endif
+
+# LLVM/Clang toolchain binaries
+
+CC      = $(LLVM_TOOLCHAIN_PATH)/bin/clang
+CXX     = $(LLVM_TOOLCHAIN_PATH)/bin/clang++
+CPP     = $(LLVM_TOOLCHAIN_PATH)/bin/clang -E -P -x c
+LD      = $(LLVM_TOOLCHAIN_PATH)/bin/clang
+STRIP   = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-strip --strip-unneeded
+AR      = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-ar rcs
+UNAR    = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-ar x
+NM      = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-nm
+OBJCOPY = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-objcopy
+OBJDUMP = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-objdump
+RANLIB  = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-ranlib
+
+# Additional LLVM-specific tools
+
+READELF = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-readelf
+SIZE    = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-size
+STRINGS = $(LLVM_TOOLCHAIN_PATH)/bin/llvm-strings
+
+# Uncomment if you want to use lld directly instead of through clang driver
+# LD = $(LLVM_TOOLCHAIN_PATH)/bin/ld.lld
+
+ARCHOPTIMIZATION += -fno-builtin
+
+# Architecture flags for Clang
+
+ARCHCFLAGS += -Wstrict-prototypes -Wno-attributes -Wno-unknown-pragmas
+
+# Clang-specific: disable some warnings that are noisy
+ARCHCFLAGS += -Wno-unused-command-line-argument
+
+ARCHCXXFLAGS += -Wno-attributes -Wno-unknown-pragmas
+ARCHCXXFLAGS += -Wno-unused-command-line-argument
+
+ifneq ($(CONFIG_LIBCXXTOOLCHAIN),y)
+  ARCHCXXFLAGS += -nostdinc++
+endif
+
+ifneq ($(CONFIG_CXX_STANDARD),)
+  ARCHCXXFLAGS += -std=$(CONFIG_CXX_STANDARD)
+endif
+
+ifneq ($(CONFIG_CXX_EXCEPTION),y)
+  ARCHCXXFLAGS += -fno-exceptions -fcheck-new
+endif
+
+ifneq ($(CONFIG_CXX_RTTI),y)
+  ARCHCXXFLAGS += -fno-rtti
+endif
+
+# General optimization flags
+
+ARCHOPTIMIZATION += -fno-common -Wall -Wshadow -Wundef
+
+# Linker flags
+
+LDFLAGS += -nostdlib
+
+# Use lld linker through clang driver
+# LDFLAGS += -fuse-ld=lld
+
+ifeq ($(CONFIG_DEBUG_OPT_UNUSED_SECTIONS),y)
+  LDFLAGS          += -Wl,--gc-sections
+  ARCHOPTIMIZATION += -ffunction-sections -fdata-sections
+endif
+
+ifeq ($(CONFIG_DEBUG_LINK_WHOLE_ARCHIVE),y)
+  LDFLAGS += -Wl,--whole-archive
+endif
+
+# Debug link map
+
+# ifeq ($(CONFIG_DEBUG_LINK_MAP),y)
+#  LDFLAGS += -Wl,--cref -Wl,-Map=$(call CONVERT_PATH,$(TOPDIR)$(DELIM)nuttx.map)
+# endif
+
+# Debug symbols
+
+ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
+  ARCHOPTIMIZATION += $(CONFIG_DEBUG_SYMBOLS_LEVEL)
+endif
+
+# Suppress warnings about RWX segments (common in embedded)
+# LDFLAGS += -Wl,--no-warn-rwx-segments
+
+# Compiler runtime library
+# For LLVM, use compiler-rt instead of libgcc
+
+COMPILER_RT_LIB = $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libclang_rt.builtins-tricore.a 2>/dev/null)
+
+# Fallback to runtime library search if specific builtins not found
+ifeq ($(COMPILER_RT_LIB),libclang_rt.builtins-tricore.a)
+  COMPILER_RT_LIB = $(shell $(CC) $(ARCHCPUFLAGS) --print-libgcc-file-name 2>/dev/null)
+endif
+
+ifneq ($(COMPILER_RT_LIB),)
+  EXTRA_LIBS += $(COMPILER_RT_LIB)
+endif
+
+# Math library
+
+ifeq ($(CONFIG_LIBM_TOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libm.a))
+endif
+
+# C++ support libraries
+
+ifeq ($(CONFIG_LIBSUPCXX),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libsupc++.a))
+endif
+
+# Coverage library
+
+ifeq ($(CONFIG_COVERAGE_TOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libprofile_rt.a))
+  # Fallback to gcov if profile_rt not available
+  ifeq ($(EXTRA_LIBS),)
+    EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libgcov.a))
+  endif
+endif
+
+# C++ standard library
+
+ifeq ($(CONFIG_LIBCXXTOOLCHAIN),y)
+  EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libc++.a))
+  # Fallback to libstdc++ if libc++ not available
+  ifeq ($(EXTRA_LIBS),)
+    EXTRA_LIBS += $(wildcard $(shell $(CC) $(ARCHCPUFLAGS) --print-file-name=libstdc++.a))
+  endif
+endif
