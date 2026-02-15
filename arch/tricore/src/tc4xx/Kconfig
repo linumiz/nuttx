@@ -168,3 +168,51 @@ config TRICORE_GETH_BRIDGE_IRQ
 endif # TC4XX_GETH
 
 endmenu
+
+# SPI
+config TC4XX_ASCLIN_SPI
+	bool "ASCLIN SPI master support"
+	default n
+	depends on SPI
+	---help---
+		Enable SPI master mode on ASCLIN modules.  The ASCLIN IP supports
+		UART, LIN, and SPI modes.  This option enables the SPI lower-half
+		driver that implements the NuttX spi_ops_s interface.
+
+		Chip select is managed via GPIO, not the hardware ASLSO signal.
+		Each bus instance requires its own ASCLIN module (separate from
+		any ASCLIN used for UART console).
+
+if TC4XX_ASCLIN_SPI
+
+config TC4XX_ASCLIN2_SPI
+	bool "ASCLIN2 as SPI bus 0"
+	default y
+	---help---
+		Use ASCLIN2 for SPI bus 0.  Default pins:
+		  MOSI: P15.0 (ATX, ALT02)
+		  MISO: P15.1 (ARX, ALTI_A)
+		  SCLK: P15.2 (ASCLKO, ALT02)
+		  CS:   P14.7 (GPIO)
+
+		Verify pin assignments against your board schematic and
+		pinmux.pdf before enabling.
+
+config TC4XX_ASCLIN2_SPI_LOOPBACK
+	bool "Enable loopback on ASCLIN2 SPI"
+	default y
+	depends on TC4XX_ASCLIN2_SPI
+	---help---
+		Enable internal loopback (IOCR.LB) for ASCLIN2 SPI.  TX is
+		internally connected to RX.  Useful for driver validation
+		without external wiring.  Disable for real hardware use.
+
+config TC4XX_ASCLIN_SPI_CHARDEV
+	bool "Register SPI character device"
+	default y
+	depends on SPI_DRIVER
+	---help---
+		Register /dev/spiN character device via spi_register().
+		Enables userspace access through standard SPI ioctls.
+
+endif # TC4XX_ASCLIN_SPI

@@ -10,4 +10,8 @@ endif
 
 ifeq ($(CONFIG_TC4XX_GETH),y)
 CHIP_CSRCS += tc4x_geth.c
+
+# SPI
+ifeq ($(CONFIG_TC4XX_ASCLIN_SPI),y)
+CHIP_CSRCS += tc4xx_asclin_spi.c
 endif
