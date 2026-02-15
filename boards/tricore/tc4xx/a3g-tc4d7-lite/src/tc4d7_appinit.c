@@ -18,6 +18,10 @@
 #include "tc4xx_i2c.h"
 #endif
 
+#ifdef CONFIG_TC4XX_ASCLIN_SPI
+#  include "hardware/tc4xx_asclin_spi.h"
+#endif
+
 void board_aurix_setup_i2c_pin(int bus)
 {
   gpio_pinset_t sclpin = AURIX_GPIO(13, 1, GPIO_PERIPH, GPIO_ALT6);
@@ -72,5 +76,21 @@ int board_app_initialize(uintptr_t arg)
 #ifdef CONFIG_CAN
   mcmcan_board_initialize();
 #endif
-  return OK;
+
+#ifdef CONFIG_TC4XX_ASCLIN_SPI
+  struct spi_dev_s *spi  = tc4xx_asclin_spibus_initialize(0);
+  if (!spi)
+    {
+      _err("SPI init failed\n");
+    }
+#ifdef CONFIG_TC4XX_ASCLIN_SPI_CHARDEV
+  ret = spi_register(spi, 0);
+  if (ret < 0)
+    {
+      _err("SPI register failed: %d\n", ret);
+    }
+#endif
+#endif
+
+  return ret;
 }
