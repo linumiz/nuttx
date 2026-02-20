@@ -29,4 +29,7 @@ ifeq ($(CONFIG_TC4XX_I2C),y)
 CSRCS += tc4xx_i2c_bringup.c
 endif
 
+ifeq ($(CONFIG_TC4XX_GETH),y)
+CSRCS += tc4d7_ethernet.c
+endif
 include $(TOPDIR)/boards/Board.mk

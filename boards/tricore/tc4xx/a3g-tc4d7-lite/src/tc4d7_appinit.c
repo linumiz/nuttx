@@ -65,5 +65,9 @@ int board_app_initialize(uintptr_t arg)
     }
 #endif
 
+#ifdef CONFIG_TC4XX_GETH
+  tc4d7_ethernet_initialize();
+#endif
+
   return OK;
 }
