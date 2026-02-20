@@ -147,4 +147,24 @@ endif # TC4XX_I2C2
 
 endif # TC4XX_I2C
 
+# GETH
+menuconfig TC4XX_GETH
+	bool "Infineon Tricore GETH support"
+	default n
+	depends on NET_DWXGMAC
+	---help---
+		Enable Infineon Tricore GETH support
+
+if TC4XX_GETH
+
+config TRICORE_GETH_BASE
+    hex "Tricore GETH base address"
+    default 0xf9000000
+
+config TRICORE_GETH_BRIDGE_IRQ
+    int "Tricore GETH bridge interrupt number"
+    default 760
+
+endif # TC4XX_GETH
+
 endmenu
