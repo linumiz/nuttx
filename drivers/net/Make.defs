@@ -115,6 +115,7 @@ ifeq ($(CONFIG_DRIVERS_WIFI_SIM),y)
   CSRCS += wifi_sim.c
 endif
 
+include net/dwxgmac/Make.defs
 include net/oa_tc6/Make.defs
 
 # Include network build support

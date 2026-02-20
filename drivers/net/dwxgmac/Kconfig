@@ -1,0 +1,39 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+menuconfig NET_DWXGMAC
+	bool "Synopsys Design Ware XGMAC support"
+	default n
+	---help---
+		Enable designware xgmac Ethernet driver.
+
+if NET_DWXGMAC
+
+config DWXGMAC_NETHERNET
+    int "Number of XGMAC Ethernet interfaces"
+    default 1
+
+config DWXGMAC_BASE
+    hex "XGMAC MAC base address"
+    default 0xf9010000
+
+config DWXGMAC_NUM_RX_DMA_DESCRIPTORS
+    int "Number of RX DMA descriptors"
+    default 8
+
+config DWXGMAC_NUM_TX_DMA_DESCRIPTORS
+    int "Number of TX DMA descriptors"
+    default 8
+
+config DWXGMAC_DMA_IRQ
+    int "XGMAC DMA interrupt number"
+    default 0
+
+config NET_DWXGMAC_MDIO
+	bool "XGMAC MDIO driver"
+	default n
+	---help---
+		Enable MDIO bus for designware xgmac Ethernet driver.
+
+endif #NET_DWXGMAC
