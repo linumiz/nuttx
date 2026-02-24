@@ -24,7 +24,7 @@ include $(TOPDIR)/.config
 include $(TOPDIR)/tools/Config.mk
 include $(TOPDIR)/arch/tricore/src/tc4xx/Toolchain.defs
 
-ARCHSCRIPT += $(BOARD_DIR)$(DELIM)scripts$(DELIM)tricore.ld
+ARCHSCRIPT += $(BOARD_DIR)$(DELIM)scripts$(DELIM)tricore-llvm.ld
 
 CFLAGS := $(ARCHCFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS)
 CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
