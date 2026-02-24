@@ -20,7 +20,7 @@
 #
 ############################################################################
 
-HEAD_ASRC += tricore_head.S
+HEAD_ASRC += tricore_head.S tricore_lib.S
 
 CMN_ASRCS += tricore_interrupt.S
 CMN_ASRCS += tricore_trap.S
@@ -36,7 +36,6 @@ CMN_CSRCS += tricore_idle.c
 CMN_CSRCS += tricore_initialize.c
 CMN_CSRCS += tricore_initialstate.c
 CMN_CSRCS += tricore_irq.c
-#CMN_CSRCS += tricore_main.c
 CMN_CSRCS += tricore_nputs.c
 CMN_CSRCS += tricore_registerdump.c
 CMN_CSRCS += tricore_releasestack.c
@@ -47,9 +46,7 @@ CMN_CSRCS += tricore_stackframe.c
 CMN_CSRCS += tricore_stm.c
 CMN_CSRCS += tricore_svcall.c
 CMN_CSRCS += tricore_switchcontext.c
-#CMN_CSRCS += tricore_tcbinfo.c
 CMN_CSRCS += tricore_trapcall.c
-#CMN_CSRCS += tricore_systimer.c
 CMN_CSRCS += tricore_usestack.c
 CMN_CSRCS += tricore_wdt.c
 

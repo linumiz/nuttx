@@ -1,14 +1,24 @@
-/* tc4x_clockconfig.c
+/****************************************************************************
+ * arch/tricore/src/tc4xx/tc4x_clockconfig.c
  *
- * Aurix TC4x system / peripheral clock tree init
+ * SPDX-License-Identifier: Apache-2.0
  *
- * - Configures external oscillator (fosc)
- * - Configures SYSPLL (~500 MHz) and PERPLL (~160 MHz)
- * - Programs CCU dividers so each domain runs as close as possible
- *   to its configured TARGET_HZ (see tc4x_clock.h) without exceeding it
- * - Selects SYS clock from SYSPLL and PER clock from PERPLL
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- */
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
 #include <nuttx/config.h>
 #include <nuttx/bits.h>
@@ -18,10 +28,6 @@
 
 #include <nuttx/arch.h>
 #include "hardware/tc4x_clock.h"
-
-/* --------------------------------------------------------------------------
- * Helpers
- * -------------------------------------------------------------------------- */
 
 #ifndef DIV_ROUND_UP
 #  define DIV_ROUND_UP(n, d)  (((n) + (d) - 1u) / (d))
@@ -38,22 +44,15 @@ static inline void tc4x_busywait(unsigned int loops)
 
 /* Convenience: field prep without needing ffs() since we know SHIFT. */
 #define FIELD_PREP(mask, shift, val)   (((uint32_t)(val) << (shift)) & (mask))
-
-/* Shortcuts for register addresses */
 #define REGADDR(off)   (TC4X_CLOCK_BASE + (off))
 
 static inline void tc4x_ccu_wait_unlocked(void)
 {
-  /* Busy-wait until CCUSTAT.LCK == 0 */
   while (getreg32(REGADDR(TC4X_CLOCK_CCUSTAT_OFFSET)) & TC4X_CCUSTAT_LCK)
     {
       __asm__ __volatile__("nop");
     }
 }
-
-/* --------------------------------------------------------------------------
- * Oscillator init (external crystal / clock)
- * -------------------------------------------------------------------------- */
 
 void tc4x_osc_init(void)
 {
@@ -71,7 +70,6 @@ void tc4x_osc_init(void)
   tc4x_ccu_wait_unlocked();
   putreg32(val, addr);
 
-  /* OSCMON1: OSCVAL = fosc_MHz - 15 */
   {
     uint32_t mhz = TC4X_FOSC_HZ / 1000000u;
     uint32_t oscval = 0;
@@ -85,7 +83,6 @@ void tc4x_osc_init(void)
                       TC4X_OSCMON1_OSCVAL_SHIFT,
                       oscval);
 
-    /* Enable monitors if you like; here we keep it minimal */
     tc4x_ccu_wait_unlocked();
     putreg32(val, REGADDR(TC4X_CLOCK_OSCMON1_OFFSET));
   }
@@ -93,10 +90,6 @@ void tc4x_osc_init(void)
   /* Give oscillator some time to stabilise */
   tc4x_busywait(100000);
 }
-
-/* --------------------------------------------------------------------------
- * SYSPLL init: fVCO = 20 MHz * 50 / 2 = 500 MHz, fpll0 = 500 MHz
- * -------------------------------------------------------------------------- */
 
 static void tc4x_syspll_init(void)
 {
@@ -116,10 +109,8 @@ static void tc4x_syspll_init(void)
   /* Wait for SYSPLL power status */
   while ((getreg32(stat) & TC4X_PLLSTAT_PWRSTAT) != 0u)
     {
-      /* spin */
     }
 
-  /* SYSPLL default */
   val = 0;
   val |= FIELD_PREP(TC4X_SYSPLLCON1_K3PREDIV_MASK,
                     TC4X_SYSPLLCON1_K3PREDIV_SHIFT,
@@ -156,15 +147,10 @@ static void tc4x_syspll_init(void)
   /* Wait for SYSPLL power status */
   while ((getreg32(stat) & TC4X_PLLSTAT_PWRSTAT) != 1u)
     {
-      /* spin */
     }
 
   tc4x_busywait(100);
 }
-
-/* --------------------------------------------------------------------------
- * PERPLL init: fVCO = 20 MHz * 40 / 1 = 800 MHz, fpll1 = 160 MHz
- * -------------------------------------------------------------------------- */
 
 static void tc4x_perpll_init(void)
 {
@@ -184,10 +170,8 @@ static void tc4x_perpll_init(void)
   /* Wait for PERPLL power status */
   while ((getreg32(stat) & TC4X_PLLSTAT_PWRSTAT) != 0u)
     {
-      /* spin */
     }
 
-  /* PERPLL default */
   val = 0;
   val |= FIELD_PREP(TC4X_PERPLLCON1_K2PREDIV_MASK,
                     TC4X_PERPLLCON1_K2PREDIV_SHIFT,
@@ -216,7 +200,6 @@ static void tc4x_perpll_init(void)
   modreg32(val, (TC4X_PERPLLCON1_K2DIV_MASK | TC4X_PERPLLCON1_K3DIV_MASK |
                  TC4X_PERPLLCON1_K4DIV_MASK), con1);
 
- /* PERPLL init */
   val = 0;
   val |= FIELD_PREP(TC4X_PERPLLCON0_NDIV_MASK,
                     TC4X_PERPLLCON0_NDIV_SHIFT,
@@ -233,14 +216,10 @@ static void tc4x_perpll_init(void)
   /* Wait for PERPLL power status */
   while ((getreg32(stat) & TC4X_PLLSTAT_PWRSTAT) != 1u)
     {
-      /* spin */
     }
   tc4x_busywait(100);
 }
 
-/* --------------------------------------------------------------------------
- * CCU: program dividers from PLL outputs to domains (SRI/SPB/CPB/...)
- * -------------------------------------------------------------------------- */
 void tc4x_ccu_set_dividers(void)
 {
   uint64_t sys_vco;
@@ -421,10 +400,6 @@ void tc4x_ccu_set_dividers(void)
   putreg32(val, REGADDR(TC4X_CLOCK_PERCCUCON1_OFFSET));
 }
 
-/* --------------------------------------------------------------------------
- * Select root sources: system from SYSPLL, peripheral from PERPLL
- * -------------------------------------------------------------------------- */
-
 static void tc4x_set_rootclk_source(enum tc4x_rootclk_domain dom,
                                     enum tc4x_clk_source src)
 {
@@ -478,12 +453,10 @@ static void tc4x_ramposc_init(void)
   stat = REGADDR(TC4X_CLOCK_RAMPSTAT_OFFSET);
   while (((getreg32(stat) & TC4X_RAMPSTAT_ACTIVE) >> TC4X_RAMPSTAT_ACTIVE_SHIFT) != 1)
     {
-      /* spin */
     }
 
   while (!((getreg32(stat) & TC4X_RAMPSTAT_FSTAT) >> TC4X_RAMPSTAT_FSTAT_SHIFT))
     {
-      /* spin */
     }
 
   if (((getreg32(stat) & TC4X_RAMPSTAT_FSTAT) >> TC4X_RAMPSTAT_FSTAT_SHIFT) != 1)
@@ -496,7 +469,6 @@ static void tc4x_ramposc_init(void)
 
       while (getreg32(stat) & TC4X_RAMPSTAT_FLLLOCK)
         {
-          /* spin */
         }
     }
 }
@@ -596,10 +568,6 @@ static void tc4x_set_perpll_divider(void)
                  TC4X_PERPLLCON1_K4DIV_MASK), con1);
 
 }
-
-/* --------------------------------------------------------------------------
- * Public entry point
- * -------------------------------------------------------------------------- */
 
 void up_clockconfig(void)
 {

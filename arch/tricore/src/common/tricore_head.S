@@ -1,242 +1,190 @@
-#include <arch/arch.h>
-/*
-1.
-sp-> PSPR0
-trap table
-virt disable
-CSA -> PSPR0 (func call)
-PSW reg init ?
-A0, A1, A8, A9 -> init
-reset cause
-*/
 /****************************************************************************
- * Public Symbols
+ * arch/tricore/src/common/tricore_head.S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * TriCore NuttX Boot Initialization
+ *
+ * Supports:
+ *   - TC1.8 architecture (AURIX TC4x)
+ *   - TC1.6 architecture (AURIX TC3x)
+ *
  ****************************************************************************/
 
+#include <arch/arch.h>
+
+#define PSW_CDE         (1 << 7)
+#define PSW_GW          (1 << 8)
+#define PSW_IS          (1 << 9)
+#define PSW_IO_SV       (2 << 10)
+
+#define PSW_DEFAULT     (PSW_CDE | PSW_GW | PSW_IO_SV)
+#define PSW_DEFAULT_IS  (PSW_DEFAULT | PSW_IS)
+
 	.extern btv_vector
+	.extern biv_vector
+	.extern tricore_wdt_disable
+	.extern up_clockconfig
+	.extern tricore_start
+
+	.extern tricore_endinit_disable
+	.extern tricore_endinit_enable
+	.extern tricore_safety_endinit_enable
+
+#if defined(CONFIG_TRICORE_TC18)
+	.extern __tricore_virt_disable
+#endif
+
+.macro encode_csa_link addr_reg, tmp1, tmp2
+	extr.u	\tmp1, \addr_reg, 6, 16
+	extr.u	\tmp2, \addr_reg, 12, 20
+	insert	\addr_reg, \tmp2, \tmp1, 0, 16
+.endm
+
+	/* Reset Entry Point */
 	.section .start, "ax"
-	.global __start; .type __start, %function
+	.global __start
+	.type   __start, %function
 
 __start:
-	/* Phase 1: Start */
-	/* Main stack pointer to PSPR0 */
-	/* TODO
-		- Should we care use DSPR0?
-		- Fix the address coming from xx?
-	*/
+	movh.a	%a15, hi:__start_stage2
+	lea	%a15, [%a15], lo:__start_stage2
+	ji	%a15
+
+	.section .text, "ax"
+	.type   __start_stage2, %function
+
+__start_stage2:
+
+	/* Disable endinit protection */
+	jl	tricore_endinit_disable
+
 	movh.a	%a10, hi:__PSRAM_USTACK
-	lea	%a10, [%a10]lo:__PSRAM_USTACK
-	dsync	/* FIXME why? */
+	lea	%a10, [%a10], lo:__PSRAM_USTACK
 
-// TODO: disable endinit
-
-	/* Trap table setup */
+	/* Trap vector table (BTV) */
 	mov	%d15, lo:btv_vector
-	addih   %d15, %d15, hi:btv_vector
+	addih	%d15, %d15, hi:btv_vector
 	mtcr	IFX_CPU_BTV, %d15
 	isync
 
-	/* CSA init to PSPR0 */
-	/* TODO should we use DSPR0 ? */
+	/* Boot CSA in PSPR0 */
 	movh.a	%a15, hi:__PSRAM_BOOT_CSA
-	lea	%a15, [%a15]lo:__PSRAM_BOOT_CSA
+	lea	%a15, [%a15], lo:__PSRAM_BOOT_CSA
 
-	mov.d   %d14, %a15
-	extr.u  %d13, %d14, 12, 20
-	extr.u  %d12, %d14, 6, 16
-	insert  %d13, %d13, %d12, 0, 16
-	mtcr    IFX_CPU_FCX, %d13 
+	mov.d	%d15, %a15
+	encode_csa_link %d15, %d14, %d13
+	mtcr	IFX_CPU_FCX, %d15
 	isync
 
-	/* Disable virtualization */
-	call disable_virtualization
+#if defined(CONFIG_TRICORE_TC18)
 
-	/* Re-init trap table setup */
+	/* Disable Virtualization */
+	call	__tricore_virt_disable
+
+	/* Re-init trap table setup because clobbered BTV and FCX after RFH */
 	mov	%d15, lo:btv_vector
-	addih   %d15, %d15, hi:btv_vector
+	addih	%d15, %d15, hi:btv_vector
 	mtcr	IFX_CPU_BTV, %d15
+
+	movh.a	%a15, hi:__PSRAM_BOOT_CSA
+	lea	%a15, [%a15], lo:__PSRAM_BOOT_CSA
+	mov.d	%d15, %a15
+	encode_csa_link %d15, %d14, %d13
+	mtcr	IFX_CPU_FCX, %d15
 	isync
 
-	/* Setup PSW */
-	mov %d15, lo:IFX_CFG_SSW_PSW_DEFAULT
-	mtcr IFX_CPU_PSW, %d15
-	isync
+#endif /* CONFIG_TRICORE_TC18 */
 
 #if defined(CONFIG_ARCH_INTERRUPTSTACK)
+	/* Setup PSW */
+	mov	%d15, lo:PSW_DEFAULT
+	mtcr	IFX_CPU_PSW, %d15
+	isync
+
 	/* PSW.IS = 0, enable ISP stack */
 	mov	%d15, lo:__istack
-	addih   %d15, %d15, hi:__istack
+	addih	%d15, %d15, hi:__istack
 	mtcr	IFX_CPU_ISP, %d15
 	isync
 #else
-	/* PSW.IS = 1, enable user stack */
-	or %d15, %d15, 0x200
-	mtcr IFX_CPU_PSW, %d15
+	/* PSW.IS = 0, enable user stack */
+	mov	%d15, lo:PSW_DEFAULT_IS
+	mtcr	IFX_CPU_PSW, %d15
 	isync
 #endif
-	/* TODO: A0/A1/A8/A9 - init global registers */
 
-	/* TODO: reset evaluation */
-	/* Phase 1: END */
-
-	/* Phase 2: Start */
-	/* Phase 2: END */
-
-	/* Phase 3: Start */
-	/* Main stack pointer to */
+	/* Stack pointer -> DSPR0 (final user stack) */
 	movh.a	%a10, hi:__USTACK
-	lea	%a10, [%a10]lo:__USTACK
-	dsync	/* FIXME why? */
+	lea	%a10, [%a10], lo:__USTACK
 
 	/* Initialize context save areas */
-	movh.a  %a15, hi:__CSA_BEGIN
-	lea     %a15, [%a15], lo:__CSA_BEGIN
-	movh.a  %a14, hi:__CSA_END
-	lea     %a14, [%a14], lo:__CSA_END
-	lea     %a13, 64
+	movh.a	%a15, hi:__CSA_BEGIN
+	lea	%a15, [%a15], lo:__CSA_BEGIN
+	movh.a	%a14, hi:__CSA_END
+	lea	%a14, [%a14], lo:__CSA_END
 
-	mov.d   %d14, %a15
-	extr.u  %d13, %d14, 12, 20
-	extr.u  %d12, %d14, 6, 16
-	insert  %d13, %d13, %d12, 0, 16
-	mtcr    IFX_CPU_FCX, %d13 
+	/* Encode first entry -> FCX */
+	mov.d	%d15, %a15
+	encode_csa_link %d15, %d14, %d13
+	mtcr	IFX_CPU_FCX, %d15
 	isync
 
+	/* Build free list */
 csa_loop:
-	addi    %d14, %d14, 64
-	extr.u  %d13, %d14, 12, 20
-	extr.u  %d12, %d14, 6, 16
-	insert  %d13, %d13, %d12, 0, 16
-	st.w    [%a15], %d13
-	add.a   %a15, %a13
-	jne.a   %a15, %a14, csa_loop
+	addi	%d15, %d15, 1
+	st.w	[%a15], %d15
+	lea	%a15, [%a15], 64
+	jne.a	%a15, %a14, csa_loop
 
 	/* Store LCX with 3 less entries for context depletion trap */
-	addi    %d13, %d13, -3
-	mtcr    IFX_CPU_LCX, %d13
+	addi	%d15, %d15, -3
+	mtcr	IFX_CPU_LCX, %d15
 	isync
-	dsync
 
-	/* copy .data */
-/*
-	- src addr
-	- size
-	- dst addr
-*/
-	movh.a %a0, hi:_data_flash // src start - flash
-	lea %a0, [%a0]lo:_data_flash
+	/* Copy .data from flash (LMA) to RAM (VMA) */
+	movh.a	%a0, hi:_data_flash
+	lea	%a0, [%a0], lo:_data_flash
+	movh.a	%a1, hi:_sdata
+	lea	%a1, [%a1], lo:_sdata
+	movh.a	%a2, hi:_edata
+	lea	%a2, [%a2], lo:_edata
+	jeq.a	%a1, %a2, skip_data
 
-	movh.a %a1, hi:_sdata // dest start - ram
-	lea %a1, [%a1]lo:_sdata
-
-	movh.a %a2, hi:_edata // dest end - ram
-	lea %a2, [%a2]lo:_edata
-
-	jeq.a %a1, %a2, skip_data // no data section
 copy_data:
-	ld.w %d0, [%a0+]
-	st.w [%a1+], %d0
-	jne.a %a1, %a2, copy_data
+	ld.w	%d0, [%a0+]
+	st.w	[%a1+], %d0
+	jne.a	%a1, %a2, copy_data
 
 skip_data:
+
 	/* clear bss */
-	movh.a %a0, hi:_sbss // start
-	lea %a0, [%a0]lo:_sbss
+	movh.a	%a0, hi:_sbss
+	lea	%a0, [%a0], lo:_sbss
+	movh.a	%a1, hi:_ebss
+	lea	%a1, [%a1], lo:_ebss
+	jeq.a	%a0, %a1, skip_bss
+	mov	%d0, 0
 
-	movh.a %a1, hi:_ebss // end
-	lea %a1, [%a1]lo:_ebss
-
-	jeq.a %a0, %a1, skip_bss // no bss section
-	mov %d0, 0
 clear_bss:
-	st.w [%a0+], %d0
-	jne.a %a0, %a1, clear_bss
+	st.w	[%a0+], %d0
+	jne.a	%a0, %a1, clear_bss
 
 skip_bss:
+
 	/* Interrupt vector table setup */
 	mov	%d15, lo:biv_vector
-	addih   %d15, %d15, hi:biv_vector
+	addih	%d15, %d15, hi:biv_vector
 	mtcr	IFX_CPU_BIV, %d15
 	isync
 
-// TODO: enable endinit
+	/* Re-enable endinit protection */
+	jl	tricore_endinit_enable
+	jl	tricore_safety_endinit_enable
 
-	// Testing INT START
-/*
-	call up_irqinitialize
-	call up_timer_initialize
+	/* Disable watchdog */
+	call	tricore_wdt_disable
 
-	mov %d4, 1
-	call up_enable_irq
-
-	mov %d4, 1
-	mov %d5, 0
-	call up_trigger_irq
-
-	mov	%d15, lo:0x120000FF
-	addih	%d15, %d15, hi:0x120000FF
-
-	movh.a %a0, hi:IFX_SRCR1
-	lea %a0, [%a0]lo:IFX_SRCR1
-	st.w [%a0], %d15
-
-	ld.w  %d15, [%a0]
-	insert %d15, %d15, 1, 23, 1
-	st.w [%a0], %d15
-
-	ld.w  %d15, [%a0]
-	insert %d15, %d15, 1, 26, 1
-	st.w [%a0], %d15
-	//Testing INT END
-
-	mov %d4, 0
-	call tricore_live
-
-live:
-	j live
-*/
-	call tricore_wdt_disable
-	call up_clockconfig
-
-	mfcr %d4, IFX_CPU_CORE_ID
-	extr.u  %d4, %d4, 0, 3
-	j tricore_start
-
-	/* Phase 3: END */
-
-disable_virtualization:
-	mov %d15, 0
-	mtcr IFX_CPU_VCON0, %d15
-	isync
-	mov %d15, 0xB00
-	mtcr IFX_CPU_PSW, %d15
-	isync
-	rfh
-
-/*
-2.
-EVR/PMIC based on external components
-
-3.
-CSA, SP -> DSPR0
-LBIST test
-...
-security cluster sync point B
-C runtime routines 
-
-4.
-unused regulator turn off
-PMIC core 1.023v
-
-5.
-security cluster sync point C
-Clock init & config flash
-
-6. optional
-
-7. access protection
-
-8.
-Cache & interrupt enablement
-xfer to OS -> startcore & startOS on every CPU
-*/
+	mfcr	%d4, IFX_CPU_CORE_ID
+	extr.u	%d4, %d4, 0, 3
+	j	tricore_start

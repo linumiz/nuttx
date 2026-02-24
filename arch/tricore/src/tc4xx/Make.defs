@@ -1,5 +1,4 @@
 # include common/Make.defs
 
 CHIP_CSRCS += tc4x_clockconfig.c
-CMN_CSRCS += tc4xx_gpio.c
-CMN_CSRCS += tc4xx_serial.c
+CHIP_CSRCS += tc4x_wdt.c

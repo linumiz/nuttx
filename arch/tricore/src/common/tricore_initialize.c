@@ -160,6 +160,9 @@ void tricore_start(int current_cpu)
 
 	/* Start other core from cpu 0 */
 	if (current_cpu == 0) {
+		up_clockconfig();
+
+		tricore_enable_sfr_access(0);
 		for (int i = 1; i < CONFIG_ARCH_TRICORE_CPU_COUNT; i++) {
 			tricore_enable_sfr_access(i);
 			hreg = IFX_CPU_BOOTCON(i);

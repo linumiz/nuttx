@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/tricore/src/common/tricore_tcbinfo.c
+ * arch/tricore/src/tc4xx/tc4x_wdt.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,41 +20,50 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
+#include <nuttx/bits.h>
+#include <nuttx/arch.h>
 
-#include <nuttx/config.h>
+#include "tricore_internal.h"
 
-#include <nuttx/sched.h>
-#include <arch/irq.h>
-#include <sys/param.h>
+#define CTRLA_LCK       BIT(0)
+#define CTRLA_PW_MASK   (0x7F << 1)   /* PW[6:0] in bits[7:1] */
 
-/****************************************************************************
- * Private Data
- ****************************************************************************/
+#define CTRLB_DR        BIT(0)       /* Disable Request */
 
-static const uint16_t g_reg_offs[1];
+/* Register addresses */
+#define WDT_CPU0_CTRLA  0xF000003C
+#define WDT_CPU0_CTRLB  0xF0000040
+#define WDT_SYS_CTRLA   0xF00001A8
+#define WDT_SYS_CTRLB   0xF00001AC
 
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-const struct tcbinfo_s g_tcbinfo used_data =
+static void tc4x_wdt_disable(uintptr_t ctrla_addr, uintptr_t ctrlb_addr)
 {
-  .pid_off        = TCB_PID_OFF,
-  .state_off      = TCB_STATE_OFF,
-  .pri_off        = TCB_PRI_OFF,
-  .name_off       = TCB_NAME_OFF,
-  .stack_off      = TCB_STACK_OFF,
-  .stack_size_off = TCB_STACK_SIZE_OFF,
-  .regs_off       = TCB_REGS_OFF,
-  .regs_num       = nitems(g_reg_offs),
-  {
-    .p = g_reg_offs,
-  },
-};
+  uint32_t ctrla;
+
+  /* Unlock: read CTRLA, invert PW, clear LCK */
+  ctrla = getreg32(ctrla_addr);
+  if (ctrla & CTRLA_LCK)
+    {
+      ctrla &= ~CTRLA_LCK;
+      ctrla ^= CTRLA_PW_MASK;
+      putreg32(ctrla, ctrla_addr);
+    }
+
+  /* Set disable request */
+  putreg32(CTRLB_DR, ctrlb_addr);
+
+  /* Lock to apply */
+  ctrla = getreg32(ctrla_addr);
+  ctrla |= CTRLA_LCK;
+  putreg32(ctrla, ctrla_addr);
+}
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+void tricore_wdt_disable(void)
+{
+  tc4x_wdt_disable(WDT_SYS_CTRLA, WDT_SYS_CTRLB);
+  tc4x_wdt_disable(WDT_CPU0_CTRLA, WDT_CPU0_CTRLB);
+}

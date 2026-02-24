@@ -1,5 +1,5 @@
 ############################################################################
-# arch/tricore/src/tc4xx/Toolchain.defs
+# arch/tricore/src/aurix/Make.defs
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -19,16 +19,3 @@
 # under the License.
 #
 ############################################################################
-
-ifeq ($(CONFIG_TRICORE_TOOLCHAIN_LLVM),y)
-ARCHCPUFLAGS += -march=tc18 -Wno-error=implicit-function-declaration
-ARCHCPUFLAGS += -mcpu=tc4xx
-else
-ARCHCPUFLAGS += -mtc18
-endif
-
-ARCHINCLUDES += $(INCDIR_PREFIX)$(TOPDIR)$(DELIM)arch$(DELIM)tricore$(DELIM)src$(DELIM)aurix
-
-CFLAGS += $(ARCHINCLUDES)
-
-include $(TOPDIR)/arch/tricore/src/common/Toolchain.defs

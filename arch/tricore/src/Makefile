@@ -21,6 +21,7 @@
 ############################################################################
 
 include $(TOPDIR)/Make.defs
+include aurix/Make.defs
 include chip/Make.defs
 include common/Make.defs
 
@@ -35,6 +36,7 @@ ARCH_SRCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src
 # ARCH_INCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)include
 
 # INCLUDES += ${INCDIR_PREFIX}$(ARCH_INCDIR)
+INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)aurix
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)chip
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)chip
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common
@@ -124,6 +126,7 @@ ifeq ($(BOARDMAKE),y)
   LDLIBS += $(LIBRARY_OPT)board
 endif
 
+VPATH += aurix
 VPATH += chip
 VPATH += common
 VPATH += $(ARCH_SUBDIR)

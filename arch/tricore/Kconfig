@@ -6,25 +6,25 @@
 if ARCH_TRICORE
 comment "Tricore Options"
 
-config ARCH_TC162
+config TRICORE_TC16
 	bool "Tricore TC 1.6.2"
 	default n
 	---help---
 		Choose for Tricore architecure version 1.6.2
 
-config ARCH_TC18
+config TRICORE_TC18
 	bool "Tricore TC 1.8"
 	---help---
 		Choose for Tricore architecure version 1.8
 
 config ARCH_FAMILY
 	string
-	default "tc162"		if ARCH_TC162
-	default "tc18"		if ARCH_TC18
+	default "tc162"		if TRICORE_TC16
+	default "tc18"		if TRICORE_TC18
 
 config ARCH_CHIP_FAMILY_TC3XX
 	bool "AURIX Family TC3XX"
-	select ARCH_TC162
+	select TRICORE_TC16
 	select ARCH_HAVE_TESTSET
 	select ARCH_HAVE_IRQTRIGGER
 	default n
@@ -33,7 +33,7 @@ config ARCH_CHIP_FAMILY_TC3XX
 
 config ARCH_CHIP_FAMILY_TC4XX
 	bool "AURIX Family TC4XX"
-	select ARCH_TC18
+	select TRICORE_TC18
 	select ARCH_HAVE_TESTSET
 	select ARCH_HAVE_IRQTRIGGER
 	default n
@@ -49,7 +49,9 @@ if ARCH_CHIP_FAMILY_TC3XX
 source "arch/tricore/src/tc3xx/Kconfig"
 endif
 
+if ARCH_CHIP_FAMILY_TC4XX
 source "arch/tricore/src/tc4xx/Kconfig"
+endif
 
 choice
 	prompt "Tricore Toolchain Selection"
