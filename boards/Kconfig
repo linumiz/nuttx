@@ -2348,6 +2348,13 @@ config ARCH_BOARD_A2G_TC397_5V_TFT
 		This options selects support for NuttX on the Infineon's AURIX board
 		board featuring the TC397 6Quad CPU.
 
+config ARCH_BOARD_A2G_TC397XA_3V3_TFT
+        bool "Infineon's AURIX TC397 board"
+        depends on TC3XX_CHIP_TC397
+	---help---
+		This options selects support for NuttX on the Infineon's AURIX board
+		board featuring the TC397 6Quad CPU.
+
 config ARCH_BOARD_A3G_TC4D7_LITE
 	bool "Infineon's AURIX TC4D7 board: ARCH_BOARD_A3G_TC4D7_LITE"
 	depends on TC4XX_CHIP_TC4D7
@@ -3743,6 +3750,7 @@ config ARCH_BOARD
 	default "starpro64"                 if ARCH_BOARD_EIC7700X_STARPRO64
 	default "sabre-6quad"               if ARCH_BOARD_SABRE_6QUAD
 	default "a2g-tc397-5v-tft"          if ARCH_BOARD_A2G_TC397_5V_TFT
+	default "a2g-tc397xa-3v3-tft"       if ARCH_BOARD_A2G_TC397XA_3V3_TFT
 	default "a3g-tc4d7-lite"            if ARCH_BOARD_A3G_TC4D7_LITE
 	default "qemu-armv7a"               if ARCH_BOARD_QEMU_ARMV7A
 	default "qemu-armv7r"               if ARCH_BOARD_QEMU_ARMV7R
@@ -3960,6 +3968,9 @@ source "boards/arm/imx6/sabre-6quad/Kconfig"
 endif
 if ARCH_BOARD_A2G_TC397_5V_TFT
 source "boards/tricore/tc397/a2g-tc397-5v-tft/Kconfig"
+endif
+if ARCH_BOARD_A2G_TC397XA_3V3_TFT
+source "boards/tricore/tc3xx/a2g-tc397xa-3v3-tft/Kconfig"
 endif
 if ARCH_BOARD_A3G_TC4D7_LITE
 source "boards/tricore/tc4xx/a3g-tc4d7-lite/Kconfig"

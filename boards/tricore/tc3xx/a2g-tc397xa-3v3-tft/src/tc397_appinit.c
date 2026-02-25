@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/tricore/src/tc397/chip.h
+ * boards/tricore/tc3xx/a2g-tc397xa-3v3-tft/src/tc397_appinit.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,11 +20,21 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_TRICORE_SRC_TC397_CHIP_H
-#define __ARCH_TRICORE_SRC_TC397_CHIP_H
-
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#endif /* __ARCH_TRICORE_SRC_TC397_CHIP_H */
+#include <nuttx/config.h>
+#include <debug.h>
+#include <errno.h>
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+int board_app_initialize(uintptr_t arg)
+{
+  int ret = OK;
+
+  return ret;
+}

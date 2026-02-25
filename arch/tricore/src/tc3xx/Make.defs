@@ -2,3 +2,4 @@
 
 CHIP_CSRCS += tc3xx_clockconfig.c
 CHIP_CSRCS += tc3x_wdt.c
+CHIP_CSRCS += tc3xx_endinit.c

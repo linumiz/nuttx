@@ -92,10 +92,6 @@ void up_initialize(void)
   /* Colorize the interrupt stack */
 
   up_color_intstack();
-
-  /* Initialize the serial device driver */
-
-  tc4x_asclin0_init(115200);
 }
 
 #define IFX_CPUn_REG(n) (0xF8800000 + 0x40000 * n)

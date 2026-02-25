@@ -36,6 +36,15 @@
 #define FIELD_PREP(mask, shift, val)   (((uint32_t)(val) << (shift)) & (mask))
 #define REGADDR(off)   (TC3X_SCU_BASE + (off))
 
+static inline void tc3x_busywait(unsigned int loops)
+{
+  volatile unsigned int i;
+  for (i = 0; i < loops; i++)
+    {
+      __asm__ __volatile__("nop");
+    }
+}
+
 static inline void tc3x_ccucon0_wait_unlocked(void)
 {
   while (getreg32(REGADDR(TC3X_CLOCK_CCUCON0_OFFSET)) & TC3X_CCUCON0_LCK)
