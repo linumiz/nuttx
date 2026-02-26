@@ -34,7 +34,16 @@
 
 int board_app_initialize(uintptr_t arg)
 {
+  bool ledon = true;
+  uint8_t i = 10;
   int ret = OK;
+  gpio_pinset_t led1 = AURIX_GPIO(GPIO_PORT33, GPIO_PIN1, GPIO_OUTPUT, GPIO_ALT0);
+
+  aurix_config_gpio(led1);
+  while (i--) {
+    aurix_gpio_write(led1, (ledon = !ledon));
+    usleep(500 * 1000);
+  }
 
   return ret;
 }
