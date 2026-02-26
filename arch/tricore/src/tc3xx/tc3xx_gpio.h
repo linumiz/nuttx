@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/tricore/src/tc4xx/tc4xx_gpio.h
+ * arch/tricore/src/tc3xx/tc3xx_gpio.h
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,12 +20,12 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_TRICORE_SRC_TC4XX_TC4XX_GPIO_H
-#define __ARCH_TRICORE_SRC_TC4XX_TC4XX_GPIO_H
+#ifndef __ARCH_TRICORE_SRC_TC3XX_TC3XX_GPIO_H
+#define __ARCH_TRICORE_SRC_TC3XX_TC3XX_GPIO_H
 
 #include "tricore_gpio.h"
-#include "hardware/tc4xx_port.h"
+#include "hardware/tc3xx_port.h"
 
 int aurix_gpio_lower_register(gpio_pinset_t pinset, int minor);
 
-#endif /* __ARCH_TRICORE_SRC_TC4XX_TC4XX_GPIO_H */
+#endif /* __ARCH_TRICORE_SRC_TC3XX_TC3XX_GPIO_H */

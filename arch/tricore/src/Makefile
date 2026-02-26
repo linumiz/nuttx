@@ -24,6 +24,7 @@ include $(TOPDIR)/Make.defs
 include aurix/Make.defs
 include chip/Make.defs
 include common/Make.defs
+include aurix/Make.defs
 
 ifeq ($(CONFIG_ARCH_CHIP_FAMILY_TC3XX),y)
 ARCH_SUBDIR = tc3xx

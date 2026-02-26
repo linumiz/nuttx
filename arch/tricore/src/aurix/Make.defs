@@ -19,3 +19,7 @@
 # under the License.
 #
 ############################################################################
+
+ifeq ($(CONFIG_DEV_GPIO),y)
+CHIP_CSRCS += tricore_gpio_lower.c
+endif

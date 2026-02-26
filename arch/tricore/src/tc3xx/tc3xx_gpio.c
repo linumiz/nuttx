@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/tricore/src/tc4xx/tc4xx_gpio.c
+ * arch/tricore/src/tc3xx/tc3xx_gpio.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,6 +20,10 @@
  *
  ****************************************************************************/
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <nuttx/config.h>
 
 #include <stdint.h>
@@ -31,71 +35,52 @@
 
 #include "tricore_gpio.h"
 #include "tricore_internal.h"
-#include "hardware/tc4xx_port.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#ifndef CONFIG_TC4XX_GPIO_ACCESS_GROUP
-#  define CONFIG_TC4XX_GPIO_ACCESS_GROUP 0
-#endif
-
-#define AURIX_PROT_STATE_RUN    0
-#define AURIX_PROT_STATE_CONFIG 1
-#define AURIX_PROT_SWEN        BIT(3)
+#include "hardware/tc3xx_port.h"
 
 static spinlock_t g_gpio_lock = SP_UNLOCKED;
 
-static inline uintptr_t tc4x_port_base(uint32_t port)
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static inline uintptr_t tc3x_port_base(uint32_t port)
 {
   return AURIX_PORT_ADDR(port);
 }
 
-static void tc4x_prot_set_config(uintptr_t prot_addr)
+static uint32_t tc3x_build_padcfg(gpio_pinset_t pinset)
 {
-  uint32_t val = getreg32(prot_addr);
-
-  if ((val & 0x07) == AURIX_PROT_STATE_RUN)
-    {
-      putreg32(AURIX_PROT_STATE_CONFIG | AURIX_PROT_SWEN, prot_addr);
-    }
-}
-
-static void tc4x_prot_set_run(uintptr_t prot_addr)
-{
-  putreg32(AURIX_PROT_STATE_RUN | AURIX_PROT_SWEN, prot_addr);
-}
-
-static uint32_t tc4x_build_drvcfg(gpio_pinset_t pinset)
-{
-  uint32_t drvcfg = 0;
   uint32_t mode = GPIO_GET_MODE(pinset);
   uint32_t funcalt = GPIO_GET_FUNCALT(pinset);
+  uint32_t cfg;
 
-  if (mode != GPIO_INPUT)
+  if (mode == GPIO_INPUT)
     {
-      drvcfg |= PORT_DRVCFG_DIR;
+      cfg = funcalt & 0x07;
+    }
+  else
+    {
+      cfg = PORT_PC_OUTPUT | (funcalt & 0x07);
+
+      if (GPIO_IS_OPENDRAIN(pinset))
+        {
+          cfg |= 0x08;
+        }
     }
 
-  if (GPIO_IS_OPENDRAIN(pinset))
-    {
-      drvcfg |= PORT_DRVCFG_OD;
-    }
-
-  drvcfg |= (funcalt << PORT_DRVCFG_MODE_SHIFT) & PORT_DRVCFG_MODE_MASK;
-
-  drvcfg |= (GPIO_GET_PADDRV(pinset) << PORT_DRVCFG_PD_SHIFT)
-             & PORT_DRVCFG_PD_MASK;
-
-  drvcfg |= (GPIO_GET_PADLEVEL(pinset) << PORT_DRVCFG_PL_SHIFT)
-             & PORT_DRVCFG_PL_MASK;
-
-  return drvcfg;
+  return cfg;
 }
 
 /****************************************************************************
  * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: aurix_config_gpio
+ *
+ * Description:
+ *   Configure a GPIO pin on TC3x.
+ *
  ****************************************************************************/
 
 int aurix_config_gpio(gpio_pinset_t pinset)
@@ -103,20 +88,36 @@ int aurix_config_gpio(gpio_pinset_t pinset)
   irqstate_t flags;
   uint32_t port = GPIO_GET_PORT(pinset);
   uint32_t pin  = GPIO_GET_PIN(pinset);
-  uintptr_t base = tc4x_port_base(port);
-  uintptr_t prot;
-  uint32_t drvcfg;
+  uintptr_t base = tc3x_port_base(port);
+  uint32_t cfg;
+  uint32_t iocr_off;
+  uint32_t iocr_shift;
+  uint32_t iocr_mask;
+  uint32_t pdr_off;
+  uint32_t pdr_shift;
+  uint32_t pdr_mask;
+  uint32_t pdr_val;
 
   if (pin > 15)
     {
       return -EINVAL;
     }
 
-  drvcfg = tc4x_build_drvcfg(pinset);
+  cfg = tc3x_build_padcfg(pinset);
+
+  iocr_off   = PORT_IOCR_REG(pin);
+  iocr_shift = PORT_IOCR_PC_SHIFT(pin);
+  iocr_mask  = PORT_IOCR_PC_MASK(pin);
+
+  pdr_off    = PORT_PDR_REG(pin);
+  pdr_shift  = PORT_PDR_SHIFT(pin);
+  pdr_mask   = PORT_PDR_MASK(pin);
+  pdr_val    = PORT_PDR_VAL(GPIO_GET_PADDRV(pinset) & 0x03,
+                             GPIO_GET_PADLEVEL(pinset) & 0x03);
 
   flags = spin_lock_irqsave(&g_gpio_lock);
 
-  if (GPIO_GET_MODE(pinset) == GPIO_OUTPUT)
+  if (GPIO_GET_MODE(pinset) != GPIO_INPUT)
     {
       if (GPIO_IS_INIT_HIGH(pinset))
         {
@@ -128,11 +129,11 @@ int aurix_config_gpio(gpio_pinset_t pinset)
         }
     }
 
-  prot = base + PORT_ACCGRP_PROTE(CONFIG_TC4XX_GPIO_ACCESS_GROUP);
-  tc4x_prot_set_config(prot);
+  aurix_cpu_endinit_enable(false);
+  modreg32(pdr_val << pdr_shift, pdr_mask, base + pdr_off);
+  aurix_cpu_endinit_enable(true);
 
-  putreg32(drvcfg, base + PORT_PADCFG_DRVCFG(pin));
-  tc4x_prot_set_run(prot);
+  modreg32(cfg << iocr_shift, iocr_mask, base + iocr_off);
 
   spin_unlock_irqrestore(&g_gpio_lock, flags);
 
@@ -143,7 +144,7 @@ void aurix_gpio_write(gpio_pinset_t pinset, bool value)
 {
   uint32_t port = GPIO_GET_PORT(pinset);
   uint32_t pin  = GPIO_GET_PIN(pinset);
-  uintptr_t omr = tc4x_port_base(port) + PORT_OMR_OFFSET;
+  uintptr_t omr = tc3x_port_base(port) + PORT_OMR_OFFSET;
 
   if (value)
     {
@@ -159,7 +160,7 @@ bool aurix_gpio_read(gpio_pinset_t pinset)
 {
   uint32_t port = GPIO_GET_PORT(pinset);
   uint32_t pin  = GPIO_GET_PIN(pinset);
-  uintptr_t in_reg = tc4x_port_base(port) + PORT_IN_OFFSET;
+  uintptr_t in_reg = tc3x_port_base(port) + PORT_IN_OFFSET;
 
   return !!(getreg32(in_reg) & BIT(pin));
 }
