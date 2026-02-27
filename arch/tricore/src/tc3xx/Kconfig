@@ -22,4 +22,33 @@ config ARCH_TRICORE_CPU_COUNT
 
 menu "TC3XX Peripheral Support"
 
+# UART
+config TRICORE_UART0
+        bool "ASCLIN0 UART"
+        default n
+        select UART0_SERIALDRIVER
+        select SERIAL
+        ---help---
+                Enable the ASCLIN0 peripheral as a UART serial port.
+
+if TRICORE_UART0
+
+config TRICORE_UART0_RXIRQ
+        int "ASCLIN0 RX IRQ number"
+        default 21
+
+config TRICORE_UART0_TXIRQ
+        int "ASCLIN0 TX IRQ number"
+        default 20
+
+config TRICORE_UART0_ERIRQ
+        int "ASCLIN0 ERR IRQ number"
+        default 22
+
+config TRICORE_ASCLINF_FREQUENCY
+        int "fASCLINF clock frequency (Hz)"
+        default 100000000
+
+endif # TRICORE_UART0
+
 endmenu

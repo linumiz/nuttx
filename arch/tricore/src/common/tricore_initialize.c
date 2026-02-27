@@ -92,6 +92,14 @@ void up_initialize(void)
   /* Colorize the interrupt stack */
 
   up_color_intstack();
+
+#ifdef USE_EARLYSERIALINIT
+  aurix_earlyserialinit();
+#endif
+
+#ifdef USE_SERIALDRIVER
+  aurix_serialinit();
+#endif
 }
 
 #define IFX_CPUn_REG(n) (0xF8800000 + 0x40000 * n)

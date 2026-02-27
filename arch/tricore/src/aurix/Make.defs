@@ -23,3 +23,7 @@
 ifeq ($(CONFIG_DEV_GPIO),y)
 CHIP_CSRCS += tricore_gpio_lower.c
 endif
+
+ifeq ($(CONFIG_TRICORE_UART0),y)
+CHIP_CSRCS += tricore_serial.c
+endif
