@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/tricore/tc3xx/a2g-tc397xa-3v3-tft/src/tc397_appinit.c
+ * boards/tricore/tc4xx/a3g-tc4d7-lite/src/tc4xx_i2c_bringup.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,54 +25,64 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
-#include <debug.h>
-#include <errno.h>
-#include "tricore_gpio.h"
 
-#ifdef CONFIG_TC4XX_I2C
+#include <errno.h>
+#include <debug.h>
+
+#include <nuttx/i2c/i2c_master.h>
 #include "tc4xx_i2c.h"
-#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void board_aurix_setup_i2c_pin(int bus)
+int tc4xx_i2c_bringup(void)
 {
-  gpio_pinset_t sclpin = AURIX_GPIO(15, 4, GPIO_PERIPH, GPIO_ALT6) | GPIO_OPEN_DRAIN;
-  gpio_pinset_t sdapin = AURIX_GPIO(15, 5, GPIO_PERIPH, GPIO_ALT6) | GPIO_OPEN_DRAIN;
-
-  aurix_config_gpio(sclpin);
-  aurix_config_gpio(sdapin);
-}
-
-void board_aurix_setup_serial_pin(void)
-{
-  gpio_pinset_t txpin = AURIX_GPIO(14, 0, GPIO_PERIPH, GPIO_ALT2);
-  gpio_pinset_t rxpin = AURIX_GPIO(14, 1, GPIO_INPUT, GPIO_PULL_UP);
-
-  aurix_config_gpio(txpin);
-  aurix_config_gpio(rxpin);
-}
-
-int board_app_initialize(uintptr_t arg)
-{
-  bool ledon = true;
-  uint8_t i = 10;
+  FAR struct i2c_master_s *i2c;
   int ret = OK;
-  gpio_pinset_t led1 = AURIX_GPIO(GPIO_PORT33, GPIO_PIN1, GPIO_OUTPUT, GPIO_ALT0);
 
-  aurix_config_gpio(led1);
-  while (i--) {
-    aurix_gpio_write(led1, (ledon = !ledon));
-    usleep(500 * 1000);
-  }
-
-#ifdef CONFIG_TC3XX_I2C
-  ret = tc3xx_i2c_bringup();
-  if (ret < 0)
+#ifdef CONFIG_TC4XX_I2C0
+  i2c = tc4xx_i2cbus_initialize(0);
+  if (i2c == NULL)
     {
-      _err("I2C init failed: %d\n", ret);
+      i2cerr("Failed to initialize I2C0\n");
+      ret = -ENODEV;
+    }
+  else
+    {
+#ifdef CONFIG_I2C_DRIVER
+      i2c_register(i2c, 0);
+#endif
+    }
+#endif
+
+#ifdef CONFIG_TC4XX_I2C1
+  i2c = tc4xx_i2cbus_initialize(1);
+  if (i2c == NULL)
+    {
+      i2cerr("Failed to initialize I2C1\n");
+      ret = -ENODEV;
+    }
+  else
+    {
+#ifdef CONFIG_I2C_DRIVER
+      i2c_register(i2c, 1);
+#endif
+    }
+#endif
+
+#ifdef CONFIG_TC4XX_I2C2
+  i2c = tc4xx_i2cbus_initialize(2);
+  if (i2c == NULL)
+    {
+      i2cerr("Failed to initialize I2C2\n");
+      ret = -ENODEV;
+    }
+  else
+    {
+#ifdef CONFIG_I2C_DRIVER
+      i2c_register(i2c, 2);
+#endif
     }
 #endif
 

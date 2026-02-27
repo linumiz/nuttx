@@ -25,4 +25,8 @@ ifeq ($(CONFIG_BOARDCTL),y)
 CSRCS += tc397_appinit.c
 endif
 
+ifeq ($(CONFIG_TC3XX_I2C),y)
+CSRCS += tc3xx_i2c_bringup.c
+endif
+
 include $(TOPDIR)/boards/Board.mk
