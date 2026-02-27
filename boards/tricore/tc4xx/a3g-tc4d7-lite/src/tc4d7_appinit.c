@@ -10,6 +10,10 @@
 #include <nuttx/irq.h>
 #include "tricore_gpio.h"
 
+#ifdef CONFIG_TC4X_WDT
+#include "hardware/tc4x_wdt.h"
+#endif
+
 void board_aurix_setup_serial_pin(void)
 {
   gpio_pinset_t txpin = AURIX_GPIO(14, 0, GPIO_PERIPH, GPIO_ALT2);
