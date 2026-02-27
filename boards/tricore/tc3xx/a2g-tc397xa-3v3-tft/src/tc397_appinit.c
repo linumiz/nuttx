@@ -27,10 +27,20 @@
 #include <nuttx/config.h>
 #include <debug.h>
 #include <errno.h>
+#include "tricore_gpio.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+void board_aurix_setup_serial_pin(void)
+{
+  gpio_pinset_t txpin = AURIX_GPIO(14, 0, GPIO_PERIPH, GPIO_ALT2);
+  gpio_pinset_t rxpin = AURIX_GPIO(14, 1, GPIO_INPUT, GPIO_PULL_UP);
+
+  aurix_config_gpio(txpin);
+  aurix_config_gpio(rxpin);
+}
 
 int board_app_initialize(uintptr_t arg)
 {
