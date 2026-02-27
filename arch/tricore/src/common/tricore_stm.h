@@ -1,63 +1,124 @@
-#ifndef TRICORE_STM_H
-#define TRICORE_STM_H
+/****************************************************************************
+ * arch/tricore/src/common/tricore_stm.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
+#ifndef __ARCH_TRICORE_SRC_COMMON_TRICORE_STM_H
+#define __ARCH_TRICORE_SRC_COMMON_TRICORE_STM_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <nuttx/config.h>
 #include <nuttx/bits.h>
 
-#if 0
-enum ifx_cpux {
-	IFX_CPU0,
-	IFX_CPU1,
-	IFX_CPU2,
-	IFX_CPU3,
-	IFX_CPU4,
-	IFX_CPU5,
-	IFX_CPUcs,
-};
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_CHIP_FAMILY_TC4XX)
+
+#define IFX_STM_CPU_BASE            0xf8800000
+#define IFX_STM_CPU_STRIDE          0x40000
+
+#define IFX_STM_DEFAULT             2
+
+#define IFX_STM_BASE(core)   (IFX_STM_CPU_BASE + (core * IFX_STM_CPU_STRIDE))
+
+#define IFX_STM_ABS(core) (IFX_STM_BASE(core) + 0x20)
+#define IFX_STM_OCS(core) (IFX_STM_BASE(core) + 0x04)
+
+#define IFX_STM_VM_BANK(core, stm) \
+  (IFX_STM_BASE(core) + ((stm >> 1) * 0x20))
+
+#define IFX_STM_CMP0(core, stm)     (IFX_STM_VM_BANK(core, stm) + 0x100)
+#define IFX_STM_CMP1(core, stm)     (IFX_STM_VM_BANK(core, stm) + 0x104)
+#define IFX_STM_CMCON(core, stm)    (IFX_STM_VM_BANK(core, stm) + 0x108)
+#define IFX_STM_ICR(core, stm)      (IFX_STM_VM_BANK(core, stm) + 0x10C)
+#define IFX_STM_ISCR(core, stm)     (IFX_STM_VM_BANK(core, stm) + 0x110)
+#define IFX_STM_ISR(core, stm)      (IFX_STM_VM_BANK(core, stm) + 0x114)
+
+#define IFX_STM_SRC_INDEX(core, stm) (8 + stm)
+
+#define IFX_STM_FREQ                (500 * 1000 * 1000)
+#define IFX_STM_HAS_64BIT_READ     1
+
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_TC3XX)
+
+#define IFX_STM_PERIPH_BASE         0xF0001000
+#define IFX_STM_PERIPH_STRIDE       0x100
+
+#define IFX_STM_DEFAULT            0
+
+#define IFX_STM_BASE(core) \
+  (IFX_STM_PERIPH_BASE + ((core) * IFX_STM_PERIPH_STRIDE))
+
+#define IFX_STM_TIM0(core)          (IFX_STM_BASE(core) + 0x10)
+#define IFX_STM_TIM0SV(core)        (IFX_STM_BASE(core) + 0x50)
+#define IFX_STM_CAPSV(core)         (IFX_STM_BASE(core) + 0x54)
+
+#define IFX_STM_CLC(core)           (IFX_STM_BASE(core) + 0x00)
+#define IFX_STM_OCS(core)           (IFX_STM_BASE(core) + 0xe8)
+
+#define IFX_STM_CMP0(core, stm)      (IFX_STM_BASE(core) + 0x30)
+#define IFX_STM_CMP1(core, stm)      (IFX_STM_BASE(core) + 0x34)
+#define IFX_STM_CMCON(core, stm)     (IFX_STM_BASE(core) + 0x38)
+#define IFX_STM_ICR(core, stm)       (IFX_STM_BASE(core) + 0x3c)
+#define IFX_STM_ISCR(core, stm)      (IFX_STM_BASE(core) + 0x40)
+
+#define IFX_STM_SRC_BASE            192
+#define IFX_STM_SRC_INDEX(core, stm) \
+  (IFX_STM_SRC_BASE + (core) * 2)
+
+#define IFX_STM_FREQ                (100 * 1000 * 1000)
+
+#define IFX_STM_HAS_64BIT_READ     0
 #endif
 
-#define IFX_STM_CPU_BASE 0xf8800000
-#define IFX_STM_CPUx_BASE(x) (IFX_STM_CPU_BASE + (x * 0x40000))
+#define IFX_STM_CMCON_MSIZE0_SHIFT  0
+#define IFX_STM_CMCON_MSIZE0_MASK   GENMASK(4, 0)
+#define IFX_STM_CMCON_MSTART0_SHIFT 8
+#define IFX_STM_CMCON_MSTART0_MASK  GENMASK(12, 8)
 
-#define IFX_STM_CLC(x) (IFX_STM_CPUx_BASE(x) + 0x0)
-#define IFX_STM_OCS(x) (IFX_STM_CPUx_BASE(x) + 0x4)
-#define IFX_STM_ABS(x) (IFX_STM_CPUx_BASE(x) + 0x20)
+#define IFX_STM_CMCON_MSIZE1_SHIFT  16
+#define IFX_STM_CMCON_MSIZE1_MASK   GENMASK(20, 16)
+#define IFX_STM_CMCON_MSTART1_SHIFT 24
+#define IFX_STM_CMCON_MSTART1_MASK  GENMASK(28, 24)
 
-#define IFX_STM_CMP0(x, n) (IFX_STM_CPUx_BASE(x) + 0x100 + ((n >> 1) * 0x20))
-#define IFX_STM_CMP1(x, n) (IFX_STM_CPUx_BASE(x) + 0x104 + ((n >> 1) * 0x20))
-#define IFX_STM_CMCON(x, n) (IFX_STM_CPUx_BASE(x) + 0x108 + ((n >> 1) * 0x20))
-#define IFX_STM_ICR(x, n) (IFX_STM_CPUx_BASE(x) + 0x10c + ((n >> 1) * 0x20))
-#define IFX_STM_ISCR(x, n) (IFX_STM_CPUx_BASE(x) + 0x110 + ((n >> 1) * 0x20))
-#define IFX_STM_ISR(x, n) (IFX_STM_CPUx_BASE(x) + 0x114 + ((n >> 1) * 0x20))
-#define IFX_STM_RELITM(x, n) (IFX_STM_CPUx_BASE(x) + 0x118 + ((n >> 1) * 0x20))
+#define IFX_STM_ICR_CMP0EN          BIT(0)
+#define IFX_STM_ICR_CMP0OS          BIT(1)
+#define IFX_STM_ICR_CMP1EN          BIT(4)
+#define IFX_STM_ICR_CMP1OS          BIT(5)
 
-#define IFX_STM_DEFAULT 2
+#define IFX_STM_ISCR_CMP0IRR        BIT(0)
+#define IFX_STM_ISCR_CMP0IRS        BIT(1)
+#define IFX_STM_ISCR_CMP1IRR        BIT(2)
+#define IFX_STM_ISCR_CMP1IRS        BIT(3)
 
-/* IFX_STM_CLC */
-#define IFX_STM_CLC_DISR BIT(0)
-#define IFX_STM_CLC_DISS BIT(1)
+#define IFX_STM_ISR_CMP0IR          BIT(0)
+#define IFX_STM_ISR_CMP1IR          BIT(1)
 
-/* IFX_STM_CMCON */
-#define IFX_STM_CMCON_MSIZE0 GENMASK(4, 0)
-#define IFX_STM_CMCON_MSTART0 GENMASK(12, 8)
-#define IFX_STM_CMCON_RELCOMP0 BIT(15)
-#define IFX_STM_CMCON_MSIZE1 GENMASK(16, 20)
-#define IFX_STM_CMCON_MSTART1 GENMASK(24, 28)
-#define IFX_STM_CMCON_RELCOMP1 BIT(31)
+#define IFX_STM_CLC_DISR            BIT(0)
+#define IFX_STM_CLC_DISS            BIT(1)
 
-/* IFX_STM_ICR */
-#define IFX_STM_ICR_CMP0EN BIT(0)
-#define IFX_STM_ICR_CMP0OS BIT(1)
-#define IFX_STM_ICR_CMP1EN BIT(4)
-#define IFX_STM_ICR_CMP1OS BIT(5)
+#define IFX_STM_OCS_SUS_W           0x12000000
 
-/* IFX_STM_ISCR */
-#define IFX_STM_ISCR_CMP0IRR BIT(0)
-#define IFX_STM_ISCR_CMP0IRS BIT(1)
-#define IFX_STM_ISCR_CMP1IRR BIT(2)
-#define IFX_STM_ISCR_CMP1IRS BIT(3)
-
-/* IFX_STM_ISR */
-#define IFX_STM_ISR_CMP0IR BIT(0)
-#define IFX_STM_ISR_CMP1IR BIT(1)
-
-#endif
+#endif /* __ARCH_TRICORE_SRC_COMMON_TRICORE_STM_H */

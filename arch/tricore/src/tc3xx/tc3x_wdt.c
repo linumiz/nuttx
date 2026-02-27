@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/tricore/src/tc3xx/tc3xx_dummy.c
+ * arch/tricore/src/tc3xx/tc3x_wdt.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,10 +20,23 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
+#include <nuttx/arch.h>
+#include <nuttx/bits.h>
+#include "tricore_internal.h"
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
+#define CON1_DR         (1u << 3)       /* Disable Request */
+
+#define SCU_BASE        0xF0036000
+#define WDTCPU0_CON1    (SCU_BASE + 0x0250)
+#define WDTS_CON1       (SCU_BASE + 0x02AC)
+
+void tricore_wdt_disable(void)
+{
+  aurix_safety_endinit_enable(false);
+  putreg32(CON1_DR, WDTS_CON1);
+  aurix_safety_endinit_enable(true);
+
+  aurix_cpu_endinit_enable(false);
+  putreg32(CON1_DR, WDTCPU0_CON1);
+  aurix_cpu_endinit_enable(true);
+}

@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/tricore/include/tc3xx/irq.h
+ * arch/tricore/src/tc3xx/tc3xx_endinit.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -20,19 +20,38 @@
  *
  ****************************************************************************/
 
-/* This file should never be included directly but, rather,
- * only indirectly through nuttx/irq.h
- */
+#include <nuttx/bits.h>
+#include "tricore_internal.h"
 
-#ifndef __ARCH_TRICORE_INCLUDE_TC3XX_IRQ_H
-#define __ARCH_TRICORE_INCLUDE_TC3XX_IRQ_H
+#define SCU_BASE        0xF0036000
+#define WDTCPU0CON0     (SCU_BASE + 0x024C)
+#define WDTSCON0        (SCU_BASE + 0x02A8)
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
+static void wdt_modify(uintptr_t con0, bool endinit)
+{
+  uint32_t val = getreg32(con0);
+  uint32_t pw = ((val >> 2) & 0x3FFF) ^ 0x003F;
 
-#include <nuttx/config.h>
+  /* Password access: LCK=1, ENDINIT=1 */
+  if (val & BIT(1))
+    {
+      putreg32((val & 0xFFFF0000) | (pw << 2) | BIT(0), con0);
+    }
 
-#define NR_IRQS 2048
+  /* Modify access: LCK=1, ENDINIT=desired */
+  putreg32((val & 0xFFFF0000) | (pw << 2) | BIT(1) |
+           (endinit ? BIT(0) : 0), con0);
 
-#endif /* __ARCH_TRICORE_INCLUDE_TC3XX_IRQ_H */
+  /* Wait for ENDINIT to take effect */
+  while ((getreg32(con0) & BIT(0)) != (endinit ? 1 : 0));
+}
+
+void aurix_cpu_endinit_enable(bool enable)
+{
+  wdt_modify(WDTCPU0CON0, enable);
+}
+
+void aurix_safety_endinit_enable(bool enable)
+{
+  wdt_modify(WDTSCON0, enable);
+}

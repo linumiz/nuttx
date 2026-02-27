@@ -104,7 +104,6 @@
 #define XCPTCONTEXT_REGS (TC_CONTEXT_REGS)
 #define XCPTCONTEXT_SIZE (sizeof(void *) * TC_CONTEXT_REGS)
 
-
 /* PSW: Program Status Word Register */
 
 #define PSW_CDE         (1 << 7) /* Bits 7: Call Depth Count Enable */
@@ -160,7 +159,16 @@ struct xcptcontext
 #define IFX_CFG_SSW_CSA_BOOT_PTR_START		(0x7010EC00)
 #define IFX_CFG_SSW_CSA_USTACK_PTR		(0x7010EB00)
 #define	IFX_CFG_DSPR0_START			(0x70000000)
-#define IFX_LWSRZ_VMY				(0xF4430c00)
+
+#if defined(CONFIG_ARCH_CHIP_FAMILY_TC4XX)
+#  define IFX_IR_LASR_ADDR          (0xF4430C00)
+#  define IFX_IR_LASR_TOS_STRIDE    (0x34)
+#  define IFX_IR_LASR_PIPN_WIDTH    (11)
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_TC3XX)
+#  define IFX_IR_LASR_ADDR          (0xF0037204)
+#  define IFX_IR_LASR_TOS_STRIDE    (0x10)
+#  define IFX_IR_LASR_PIPN_WIDTH    (10)
+#endif
 
 #ifndef __ASSEMBLY__
 #define IFX_MTCR(reg, val)  { __asm__ __volatile__ ("dsync" : : : "memory"); \

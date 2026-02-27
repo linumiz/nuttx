@@ -7,38 +7,34 @@ if ARCH_TRICORE
 comment "Tricore Options"
 
 config TRICORE_TC16
-	bool "Tricore TC 1.6.2"
-	default n
-	---help---
-		Choose for Tricore architecure version 1.6.2
+        bool
+        default n
 
 config TRICORE_TC18
-	bool "Tricore TC 1.8"
-	---help---
-		Choose for Tricore architecure version 1.8
+        bool
+        default n
 
-config ARCH_FAMILY
-	string
-	default "tc162"		if TRICORE_TC16
-	default "tc18"		if TRICORE_TC18
+choice
+        prompt "AURIX SoC Family"
+        default ARCH_CHIP_FAMILY_TC4XX
 
 config ARCH_CHIP_FAMILY_TC3XX
-	bool "AURIX Family TC3XX"
-	select TRICORE_TC16
-	select ARCH_HAVE_TESTSET
-	select ARCH_HAVE_IRQTRIGGER
-	default n
-	---help---
-		AURIX TC3XX family: TC3XX
+        bool "AURIX Family TC3XX"
+        select TRICORE_TC16
+        select ARCH_HAVE_TESTSET
+        select ARCH_HAVE_IRQTRIGGER
+        ---help---
+                AURIX TC3XX family: TC3XX
 
 config ARCH_CHIP_FAMILY_TC4XX
-	bool "AURIX Family TC4XX"
-	select TRICORE_TC18
-	select ARCH_HAVE_TESTSET
-	select ARCH_HAVE_IRQTRIGGER
-	default n
-	---help---
-		AURIX TC4xx family: TC4XX
+        bool "AURIX Family TC4XX"
+        select TRICORE_TC18
+        select ARCH_HAVE_TESTSET
+        select ARCH_HAVE_IRQTRIGGER
+        ---help---
+                AURIX TC4xx family: TC4XX
+
+endchoice
 
 config ARCH_CHIP
 	string

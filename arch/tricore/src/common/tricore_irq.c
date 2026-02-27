@@ -31,6 +31,7 @@
 #include <debug.h>
 
 #include <nuttx/arch.h>
+#include <nuttx/bits.h>
 #include <nuttx/irq.h>
 
 #include <sys/types.h>
@@ -38,109 +39,105 @@
 #include "tricore_internal.h"
 
 /****************************************************************************
- * Public Functions
+ * Private Functions
  ****************************************************************************/
 
+static inline uint32_t tricore_srcr_read(int irq)
+{
+  return getreg32(IFX_IR_GET_SRC(irq));
+}
+
+static inline void tricore_srcr_write(int irq, uint32_t val)
+{
+  putreg32(val, IFX_IR_GET_SRC(irq));
+}
+
 /****************************************************************************
- * Name: up_irqinitialize
+ * Public Functions
  ****************************************************************************/
 
 void up_irq_enable(void)
 {
-	IFX_IRQ_ENABLE();
+  IFX_IRQ_ENABLE();
 }
 
 void up_irqinitialize(void)
 {
-	IFX_IRQ_ENABLE();
+  IFX_IRQ_ENABLE();
 }
-
-/****************************************************************************
- * Name: up_disable_irq
- *
- * Description:
- *   Disable the IRQ specified by 'irq'
- *
- ****************************************************************************/
 
 void up_disable_irq(int irq)
 {
-	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
-	reg.B.SRE = 0;
-	putreg32(reg.U, IFX_IR_GET_SRC(irq));
-}
+  uint32_t regval = tricore_srcr_read(irq);
 
-/****************************************************************************
- * Name: up_enable_irq
- *
- * Description:
- *   Enable the IRQ specified by 'irq'
- *
- ****************************************************************************/
+  regval &= ~SRCR_SRE;
+  tricore_srcr_write(irq, regval);
+}
 
 void up_enable_irq(int irq)
 {
-	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
+  uint32_t regval = tricore_srcr_read(irq);
 
-	reg.B.CLRR = 1,
-	reg.B.IOVCLR = 1,
-	reg.B.SRE = 1;
-	if (reg.B.SRPN == 0x0)
-		reg.B.SRPN = TRICORE_DEFAULT_IR_PRIO;
-	if (reg.B.TOS == 0xf)
-		reg.B.TOS = TRICORE_DEFAULT_IR_TOS;
+  regval |= SRCR_CLRR | SRCR_IOVCLR;
 
-	putreg32(reg.U, IFX_IR_GET_SRC(irq));
+#if defined(CONFIG_ARCH_CHIP_FAMILY_TC3XX)
+  regval |= SRCR_SWSCLR;
+#endif
+
+  regval &= ~SRCR_SRPN_MASK;
+  regval |= ((uint32_t)irq << SRCR_SRPN_SHIFT) & SRCR_SRPN_MASK;
+
+#if defined(CONFIG_ARCH_CHIP_FAMILY_TC4XX)
+  if (((regval & SRCR_TOS_MASK) >> SRCR_TOS_SHIFT) == 0xf)
+#elif defined(CONFIG_ARCH_CHIP_FAMILY_TC3XX)
+  if (((regval & SRCR_TOS_MASK) >> SRCR_TOS_SHIFT) == 0x7)
+#endif
+    {
+      regval &= ~SRCR_TOS_MASK;
+      regval |= (TRICORE_DEFAULT_IR_TOS << SRCR_TOS_SHIFT) &
+                 SRCR_TOS_MASK;
+    }
+
+  regval |= SRCR_SRE;
+  tricore_srcr_write(irq, regval);
 }
 
 #ifdef CONFIG_ARCH_HAVE_IRQTRIGGER
-
-/****************************************************************************
- * Name: up_trigger_irq
- *
- * Description:
- *   Trigger an IRQ by software.
- *
- ****************************************************************************/
-
 void up_trigger_irq(int irq, cpu_set_t cpuset)
 {
-	// GPRS - mbox
-	(void) cpuset;
-	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
+  uint32_t regval;
 
-	reg.B.SETR = 1;
+  (void)cpuset;
 
-	putreg32(reg.U, IFX_IR_GET_SRC(irq));
+  regval = tricore_srcr_read(irq);
+  regval |= SRCR_SETR;
+  tricore_srcr_write(irq, regval);
 }
 
-#endif
-
-/****************************************************************************
- * Name: up_affinity_irq
- *
- * Description:
- *   Set an IRQ affinity by software.
- *
- ****************************************************************************/
+#endif /* CONFIG_ARCH_HAVE_IRQTRIGGER */
 
 void up_affinity_irq(int irq, cpu_set_t cpuset)
 {
-	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
+  uint32_t regval;
 
-	up_disable_irq(irq);
-	// FIXME ffs(cpuset)
-	reg.B.TOS = cpuset;
+  up_disable_irq(irq);
 
-	putreg32(reg.U, IFX_IR_GET_SRC(irq));
-	up_enable_irq(irq);
+  regval = tricore_srcr_read(irq);
+  regval &= ~SRCR_TOS_MASK;
+  regval |= ((uint32_t)cpuset << SRCR_TOS_SHIFT) & SRCR_TOS_MASK;
+  tricore_srcr_write(irq, regval);
+
+  up_enable_irq(irq);
 }
 
 int up_prioritize_irq(int irq, int priority)
 {
-	SRCR reg = {.U = getreg32(IFX_IR_GET_SRC(irq))};
+  uint32_t regval;
 
-	reg.B.SRPN = priority;
+  regval = tricore_srcr_read(irq);
+  regval &= ~SRCR_SRPN_MASK;
+  regval |= ((uint32_t)priority << SRCR_SRPN_SHIFT) & SRCR_SRPN_MASK;
+  tricore_srcr_write(irq, regval);
 
-	putreg32(reg.U, IFX_IR_GET_SRC(irq));
+  return 0;
 }

@@ -48,7 +48,6 @@ CMN_CSRCS += tricore_svcall.c
 CMN_CSRCS += tricore_switchcontext.c
 CMN_CSRCS += tricore_trapcall.c
 CMN_CSRCS += tricore_usestack.c
-CMN_CSRCS += tricore_wdt.c
 
 ifeq ($(CONFIG_SPINLOCK),y)
   CMN_CSRCS += tricore_testset.c
