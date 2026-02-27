@@ -51,4 +51,81 @@ config TRICORE_ASCLINF_FREQUENCY
 
 endif # TRICORE_UART0
 
+# I2C
+menuconfig TC3XX_I2C
+        bool "TC3xx I2C Master Driver"
+        default n
+        depends on I2C
+        select ARCH_HAVE_I2CRESET
+        ---help---
+                Enable I2C master driver for Infineon Aurix TC3xx.
+
+if TC3XX_I2C
+
+config TC3XX_I2C_CLOCK_FREQ
+        int "I2C peripheral source clock in Hz"
+        default 100000000
+        ---help---
+                The I2C clock frequency from the CCU. Check your clock
+                tree configuration. Default assumes 100 MHz.
+
+config TC3XX_I2C0
+        bool "Enable I2C0"
+        default n
+
+if TC3XX_I2C0
+
+config TC3XX_I2C0_FREQUENCY
+        int "I2C0 default bus frequency"
+        default 100000
+        ---help---
+                Default I2C bus speed in Hz.
+                standard mode (100 kHz)
+                fast mode (400 kHz)
+
+config TC3XX_I2C0_PISEL
+        int "I2C0 pin input select"
+        default 1
+        range 0 7
+        ---help---
+                Selects which port pins provide SDA/SCL input signals.
+
+endif # TC3XX_I2C0
+
+config TC3XX_I2C1
+        bool "Enable I2C1"
+        default n
+
+if TC3XX_I2C1
+
+config TC3XX_I2C1_FREQUENCY
+        int "I2C1 default bus frequency"
+        default 100000
+
+config TC3XX_I2C1_PISEL
+        int "I2C1 pin input select"
+        default 0
+        range 0 7
+
+endif # TC3XX_I2C1
+
+config TC3XX_I2C2
+        bool "Enable I2C2"
+        default n
+
+if TC3XX_I2C2
+
+config TC3XX_I2C2_FREQUENCY
+        int "I2C2 default bus frequency"
+        default 100000
+
+config TC3XX_I2C2_PISEL
+        int "I2C2 pin input select"
+        default 0
+        range 0 7
+
+endif # TC3XX_I2C2
+
+endif # TC3XX_I2C
+
 endmenu

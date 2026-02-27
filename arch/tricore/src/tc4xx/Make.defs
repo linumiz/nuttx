@@ -3,3 +3,7 @@
 CHIP_CSRCS += tc4x_clockconfig.c
 CHIP_CSRCS += tc4x_wdt.c
 CHIP_CSRCS += tc4xx_gpio.c
+
+ifeq ($(CONFIG_TC4XX_I2C),y)
+CHIP_CSRCS += tc4xx_i2c.c
+endif

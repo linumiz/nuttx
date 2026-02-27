@@ -27,3 +27,7 @@ endif
 ifeq ($(CONFIG_TRICORE_UART0),y)
 CHIP_CSRCS += tricore_serial.c
 endif
+
+ifeq ($(CONFIG_I2C),y)
+CHIP_CSRCS += tricore_i2c.c
+endif
