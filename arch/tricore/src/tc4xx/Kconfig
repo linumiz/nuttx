@@ -48,4 +48,26 @@ config TRICORE_ASCLINF_FREQUENCY
 
 endif # TRICORE_UART0
 
+# WTU
+config TC4X_WDT
+	bool "TC4x Watchdog Timer (WTU)"
+	default n
+	depends on WATCHDOG
+	select TC4X_SMU
+	---help---
+		Enable the TC4x Watchdog Timer driver.  Supports all 7
+		WDT instances: CPU0-CPU5 and System WDT.
+
+		WDT overflow triggers an alarm to the SMU.  The SMU must
+		be configured (via CONFIG_TC4X_SMU) to issue RESET0_REQ
+		for the alarm to cause a system reset.
+
+config TC4X_WDT_FSPB
+	int "SPB clock frequency (Hz)"
+	default 100000000
+	depends on TC4X_WDT
+	---help---
+		The SPB (System Peripheral Bus) clock frequency in Hz.
+		Used to calculate WDT timeout periods.  Default 100 MHz.
+
 endmenu
