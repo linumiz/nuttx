@@ -24,7 +24,6 @@ include $(TOPDIR)/Make.defs
 include aurix/Make.defs
 include chip/Make.defs
 include common/Make.defs
-include aurix/Make.defs
 
 ifeq ($(CONFIG_ARCH_CHIP_FAMILY_TC3XX),y)
 ARCH_SUBDIR = tc3xx
@@ -32,12 +31,8 @@ else ifeq ($(CONFIG_ARCH_CHIP_FAMILY_TC4XX),y)
 ARCH_SUBDIR = tc4xx
 endif
 
-include $(ARCH_SUBDIR)/Make.defs
 
 ARCH_SRCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src
-# ARCH_INCDIR = $(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)include
-
-# INCLUDES += ${INCDIR_PREFIX}$(ARCH_INCDIR)
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)aurix
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)chip
 INCLUDES += ${INCDIR_PREFIX}$(ARCH_SRCDIR)$(DELIM)common
@@ -75,8 +70,6 @@ SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
 BIN  = libarch$(LIBEXT)
-
-$(info HEAD_ASRC=$(HEAD_ASRC))
 
 $(foreach lib,$(notdir $(wildcard $(APPDIR)$(DELIM)staging$(DELIM)*$(LIBEXT))), \
   $(foreach elib,$(EXTRA_LIBS), \
