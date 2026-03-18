@@ -8,3 +8,7 @@ CHIP_CSRCS += tc3xx_gpio.c
 ifeq ($(CONFIG_TC3XX_I2C),y)
 CHIP_CSRCS += tc3xx_i2c.c
 endif
+
+ifeq ($(CONFIG_TC3XX_GETH),y)
+CHIP_CSRCS += tc3x_geth.c
+endif
