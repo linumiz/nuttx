@@ -76,5 +76,13 @@ int board_app_initialize(uintptr_t arg)
     }
 #endif
 
+#ifdef CONFIG_TC3XX_GETH
+  ret = tc397_ethernet_initialize();
+  if (ret < 0)
+    {
+      _err("eth init failed: %d\n", ret);
+    }
+#endif
+
   return ret;
 }
