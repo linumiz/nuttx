@@ -45,9 +45,13 @@
 #include <nuttx/random.h>
 #include <nuttx/wqueue.h>
 
-#include "xgmac_priv.h"
 #include <arch/barriers.h>
-#include "dwxgmac.h"
+#if defined(CONFIG_DWXGMAC_QOS)
+#include "qos_priv.h"
+#else
+#include "xgmac_priv.h"
+#endif
+
 
 /****************************************************************************
  * Pre-processor Definitions

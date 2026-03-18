@@ -36,35 +36,6 @@
  * XGMAC-specific config / data
  ****************************************************************************/
 
-struct eth_xgmac_config
-{
-  const struct eth_dwmac_config dwmac;
-  uint8_t blen;
-  bool aal;
-  bool ubl;
-};
-
-struct eth_xgmac_data
-{
-  struct eth_dwmac_data dwmac;
-};
-
-struct xgmac_driver_s
-{
-  struct net_driver_s dev;
-  uintptr_t base;
-  int irq;
-
-  struct eth_xgmac_config *config;
-  struct eth_xgmac_data *data;
-
-  struct work_s rxwork;
-  struct work_s pollwork;
-
-  bool ifup;
-  bool txcoe;
-};
-
 struct eth_xgmac_rdes_rd
 {
   struct { uint32_t buf1ap; }         rdes0;

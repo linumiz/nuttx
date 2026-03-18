@@ -36,4 +36,10 @@ config NET_DWXGMAC_MDIO
 	---help---
 		Enable MDIO bus for designware xgmac Ethernet driver.
 
+config DWXGMAC_QOS
+	bool "XGMAC based on QOS driver"
+	default n
+	---help---
+		Enable QOS version of designware xgmac Ethernet driver.
+
 endif #NET_DWXGMAC
