@@ -133,6 +133,13 @@ int aurix_config_gpio(gpio_pinset_t pinset)
   modreg32(pdr_val << pdr_shift, pdr_mask, base + pdr_off);
   aurix_cpu_endinit_enable(true);
 
+  if (GPIO_IS_PERIPH_OWN_PAD(pinset))
+  {
+    aurix_safety_endinit_enable(false);
+    modreg32(BIT(pin), BIT(pin), base + PORT_PCSR_OFFSET);
+    aurix_safety_endinit_enable(true);
+  }
+
   modreg32(cfg << iocr_shift, iocr_mask, base + iocr_off);
 
   spin_unlock_irqrestore(&g_gpio_lock, flags);

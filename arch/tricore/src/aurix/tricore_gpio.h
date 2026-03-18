@@ -108,7 +108,7 @@
 
 /* Port number: bits 23:16 */
 #define GPIO_PORT_SHIFT         16
-#define GPIO_PORT_MASK          GENMASK(23, 16)
+#define GPIO_PORT_MASK          GENMASK(22, 16)
 #define GPIO_PORT(n)            ((uint32_t)(n) << GPIO_PORT_SHIFT)
 #define GPIO_PORT0              0
 #define GPIO_PORT1              1
@@ -151,6 +151,8 @@
 #define GPIO_PORT38             38
 #define GPIO_PORT39             39
 
+#define GPIO_PERIPH_OWN_PAD     BIT(23)
+
 #define GPIO_PADLEVEL_SHIFT     24
 #define GPIO_PADLEVEL_MASK      GENMASK(26, 24)
 
@@ -175,13 +177,14 @@
 #define GPIO_IS_OUTPUT(ps)      (GPIO_GET_MODE(ps) != GPIO_INPUT)
 #define GPIO_IS_OPENDRAIN(ps)   (!!((ps) & GPIO_OPEN_DRAIN))
 #define GPIO_IS_INIT_HIGH(ps)   (!!((ps) & GPIO_OUTPUT_HIGH))
+#define GPIO_IS_PERIPH_OWN_PAD(ps)  (!!((ps) & GPIO_PERIPH_OWN_PAD))
 
 #define AURIX_GPIO(port_n, pin_n, mode, funcalt) \
   (GPIO_PORT(port_n) | (mode) | (funcalt) | ((pin_n) & GPIO_PIN_MASK))
 
-#define AURIX_GPIO_FULL(port_n, pin_n, mode, funcalt, od, init, pd, pl) \
+#define AURIX_GPIO_FULL(port_n, pin_n, mode, funcalt, od, init, pd, pl, ph) \
   (GPIO_PORT(port_n) | (mode) | (funcalt) | ((pin_n) & GPIO_PIN_MASK) | \
-   (od) | (init) | GPIO_PD(pd) | GPIO_PL(pl))
+   (od) | (init) | GPIO_PD(pd) | GPIO_PL(pl) | (ph))
 
 /****************************************************************************
  * Public Types
