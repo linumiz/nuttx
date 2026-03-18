@@ -917,6 +917,27 @@
 #define MII_AR8031_PSSR_1000MBPS      (2 << 14)
 #define MII_AR8031_PSSR_DUPLEX        (1 << 13)  /* Bit 13:  Full duplex mode */
 
+/* Realtek RTL8211F MII Specific funtion register bits */
+#define MII_PHYID1_RTL8211F        0x1C
+#define MII_PHYID2_RTL8211F        0xC916
+
+#define MII_RTL8211F_MDIO_LCR      0x10
+#define MII_RTL8211F_MDIO_EEELCR   0x11
+#define MII_RTL8211F_MDIO_INER     0x12
+#define MII_RTL8211F_MDIO_PHYSCR   0x14
+#define MII_RTL8211F_MDIO_PHYCR1   0x18
+#define MII_RTL8211F_MDIO_PHYCR2   0x19
+#define MII_RTL8211F_MDIO_PHYSR    0x1A
+#define MII_RTL8211F_MDIO_INSR     0x1D
+#define MII_RTL8211F_MDIO_PAGSR    0x1F
+
+/* PHYSR Register (0x1A) */
+
+#define MII_RTL8211F_PHYSTS_SPEED1  (1 << 5)   /* Bit 5: Speed Status Register */
+#define MII_RTL8211F_PHYSTS_SPEED   (1 << 4)   /* Bit 4: Speed Status Register */
+#define MII_RTL8211F_PHYSTS_DUPLEX  (1 << 3)   /* Bit 3: Duplex Status Register */
+
+
 /* YT8512 register bit settings *********************************************/
 
 /* YT8512 MII ID1/2 register bits */
