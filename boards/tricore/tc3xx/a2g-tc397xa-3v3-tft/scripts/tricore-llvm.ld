@@ -40,6 +40,7 @@ MEMORY
   dlmu   (rw): ORIGIN = 0x90000000, LENGTH = 64K
   pflash (rx): ORIGIN = 0x80000000, LENGTH = 3M
 #endif
+  pflash0 (rx): ORIGIN = 0xA0000000, LENGTH = 4M
 
 #if CPU == 1
   dsram  (rw): ORIGIN = 0x60000000, LENGTH = 240K
@@ -47,6 +48,7 @@ MEMORY
   dlmu   (rw): ORIGIN = 0x90010000, LENGTH = 64K
   pflash (rx): ORIGIN = 0x80300000, LENGTH = 3M
 #endif
+  pflash1 (rx): ORIGIN = 0xA0400000, LENGTH = 4M
 
 #if CPU == 2
   dsram  (rw): ORIGIN = 0x50000000, LENGTH = 96K
@@ -54,6 +56,7 @@ MEMORY
   dlmu   (rw): ORIGIN = 0x90020000, LENGTH = 64K
   pflash (rx): ORIGIN = 0x80600000, LENGTH = 3M
 #endif
+  pflash2 (rx): ORIGIN = 0xA0800000, LENGTH = 2M
 
 #if CPU == 3
   dsram  (rw): ORIGIN = 0x40000000, LENGTH = 96K
@@ -61,6 +64,7 @@ MEMORY
   dlmu   (rw): ORIGIN = 0x90030000, LENGTH = 64K
   pflash (rx): ORIGIN = 0x80900000, LENGTH = 3M
 #endif
+  pflash3 (rx): ORIGIN = 0xA0A00000, LENGTH = 4M
 
 #if CPU == 4
   dsram  (rw): ORIGIN = 0x30000000, LENGTH = 96K
@@ -68,6 +72,7 @@ MEMORY
   dlmu   (rw): ORIGIN = 0x90100000, LENGTH = 64K
   pflash (rx): ORIGIN = 0x80C00000, LENGTH = 3M
 #endif
+  pflash4 (rx): ORIGIN = 0x80E00000, LENGTH = 4M
 
 #if CPU == 5
   dsram  (rw): ORIGIN = 0x10000000, LENGTH = 96K
@@ -75,6 +80,7 @@ MEMORY
   dlmu   (rw): ORIGIN = 0x90110000, LENGTH = 64K
   pflash (rx): ORIGIN = 0x80F00000, LENGTH = 1M
 #endif
+  pflash5 (rx): ORIGIN = 0x81200000, LENGTH = 2M
 
   lmu    (rw): ORIGIN = 0x90040000, LENGTH = 768K
 }
@@ -85,6 +91,13 @@ REGION_ALIAS("BSS_MEM", dsram)
 REGION_ALIAS("CSA_MEM", dsram)
 REGION_ALIAS("HEAP_MEM", lmu)
 REGION_ALIAS("PSRAM_MEM", psram)
+
+pflash0_base = ORIGIN(pflash0);
+pflash1_base = ORIGIN(pflash1);
+pflash2_base = ORIGIN(pflash2);
+pflash3_base = ORIGIN(pflash3);
+pflash4_base = ORIGIN(pflash4);
+pflash5_base = ORIGIN(pflash5);
 
 SECTIONS
 {
@@ -122,6 +135,17 @@ SECTIONS
     _edata = ABSOLUTE(.);
   } > DATA_MEM AT> CODE_MEM
   _data_flash = LOADADDR(.data);
+
+  .flash_banks :
+  {
+    _flash_banks = . ;
+    LONG(pflash0_base);
+    LONG(pflash1_base);
+    LONG(pflash2_base);
+    LONG(pflash3_base);
+    LONG(pflash4_base);
+    LONG(pflash5_base);
+  } > CODE_MEM
 
   .psram_base :
   {
