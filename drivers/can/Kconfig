@@ -221,6 +221,23 @@ config MCP2515_SPI_SCK_FREQUENCY
 
 endif # CAN_MCP2515
 
+config CAN_MCAN
+	bool "Bosch MCAN CAN Bus Controller"
+	default n
+	select ARCH_HAVE_CAN_ERRORS
+	---help---
+		Enable driver support for Bosch MCAN.
+
+if CAN_MCAN
+
+config CAN_MCAN_BITRATE
+	int "MCAN bitrate"
+	default 500000
+	---help---
+		MCP2515 bitrate in bits per second.
+
+endif # CAN_MCAN
+
 menuconfig CAN_SJA1000
 	tristate "Philips/NXP SJA1000 devices"
 
