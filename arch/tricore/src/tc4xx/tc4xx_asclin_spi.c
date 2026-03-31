@@ -40,8 +40,8 @@
 #include <nuttx/spi/spi.h>
 
 #include "tricore_internal.h"
+#include "tricore_asclin.h"
 #include "tc4xx_gpio.h"
-#include "hardware/tc4xx_asclin.h"
 #include "hardware/tc4xx_asclin_spi.h"
 
 /****************************************************************************
@@ -225,7 +225,7 @@ static const struct spi_ops_s g_asclin_spi_ops =
 
 static const struct tc4xx_spi_config_s g_spi0_config =
 {
-  .base      = TC4X_ASCLIN_BASE(2),
+  .base      = TRICORE_ASCLIN_BASE(2),
   .fclk      = TC4X_ASCLINF_FREQUENCY,
   .clk_src   = TC4X_ASCLIN_CLK_SRC,
   .bus        = 0,
@@ -235,14 +235,10 @@ static const struct tc4xx_spi_config_s g_spi0_config =
    * P14.7 (GPIO CS).  Verify against pinmux.pdf Table for Port 15.
    */
 
-  .mosi_pin  = GPIO_PAD_CFG(GPIO_PORT15, GPIO_PIN0,
-                             GPIO_PERIPH, GPIO_PAD_CONFIG_OUT_ALT02),
-  .miso_pin  = GPIO_PAD_CFG(GPIO_PORT15, GPIO_PIN1,
-                             GPIO_INPUT, GPIO_PAD_CONFIG_IN_PULLUP),
-  .sclk_pin  = GPIO_PAD_CFG(GPIO_PORT15, GPIO_PIN2,
-                             GPIO_PERIPH, GPIO_PAD_CONFIG_OUT_ALT02),
-  .cs_pin    = GPIO_PAD_CFG(GPIO_PORT14, GPIO_PIN7,
-                             GPIO_OUTPUT, GPIO_PAD_CONFIG_OUT_GPIO),
+  .mosi_pin  = AURIX_GPIO(15, 0, GPIO_PERIPH, GPIO_ALT2),
+  .miso_pin  = AURIX_GPIO(15, 1, GPIO_INPUT, GPIO_PULL_UP),
+  .sclk_pin  = AURIX_GPIO(15, 2, GPIO_PERIPH, GPIO_ALT2),
+  //.cs_pin    = AURIX_GPIO(14, 7, GPIO_OUTPUT, GPIO_PAD_CONFIG_OUT_GPIO),
   .rx_alti   = ASCLIN_IOCR_ALTI_A,
 
   /* Enable loopback for initial bring-up.  Set to false for real HW. */
