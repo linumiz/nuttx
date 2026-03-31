@@ -31,3 +31,7 @@ endif
 ifeq ($(CONFIG_I2C),y)
 CHIP_CSRCS += tricore_i2c.c
 endif
+
+ifeq ($(CONFIG_CAN),y)
+CHIP_CSRCS += tricore_mcmcan.c
+endif

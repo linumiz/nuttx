@@ -365,7 +365,7 @@ void tc4x_ccu_set_dividers(void)
                     fmcani_div);
   val |= FIELD_PREP(TC4X_PERCCUCON0_CLKSELMCAN_MASK,
                     TC4X_PERCCUCON0_CLKSELMCAN_SHIFT,
-                    0); /* FIXME */
+                    1); /* FIXME */
   val |= FIELD_PREP(TC4X_PERCCUCON0_QSPIDIV_MASK,
                     TC4X_PERCCUCON0_QSPIDIV_SHIFT,
                     fqspi_div);
