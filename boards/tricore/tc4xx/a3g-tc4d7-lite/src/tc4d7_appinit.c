@@ -69,5 +69,8 @@ int board_app_initialize(uintptr_t arg)
   tc4d7_ethernet_initialize();
 #endif
 
+#ifdef CONFIG_CAN
+  mcmcan_board_initialize();
+#endif
   return OK;
 }
