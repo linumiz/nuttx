@@ -32,4 +32,9 @@ endif
 ifeq ($(CONFIG_TC3XX_GETH),y)
 CSRCS += tc397_ethernet.c
 endif
+
+ifeq ($(CONFIG_CAN),y)
+CSRCS += tc397_can.c
+endif
+
 include $(TOPDIR)/boards/Board.mk

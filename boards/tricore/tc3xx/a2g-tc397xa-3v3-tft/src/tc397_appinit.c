@@ -84,5 +84,9 @@ int board_app_initialize(uintptr_t arg)
     }
 #endif
 
+#ifdef CONFIG_CAN
+  mcmcan_board_initialize();
+#endif
+
   return ret;
 }
