@@ -179,7 +179,7 @@ derivative tc39
         start_address
         (
 #if CONFIG_CPU_COREID == 0
-            symbol = "_START"
+            symbol = "__start"
 #elif CONFIG_CPU_COREID == 1
             symbol = "_START1"
 #elif CONFIG_CPU_COREID == 2
@@ -269,7 +269,7 @@ derivative tc39
             "__CSA5_END":= "__CSA_END";
         }
 
-        /*Fixed memory Allocations for _START*/
+        /*Fixed memory Allocations for __start*/
         group (ordered)
         {
           group  interface_const (run_addr=mem:pfls[0x0020])
@@ -535,12 +535,6 @@ derivative tc39
         }
 
         /*LMU Data sections*/
-        group uncached_data(ordered, contiguous, align = 4, attributes=rw, run_addr = mem:dsram)
-        {
-            select "(.data.uncached.*)";
-            select "(.bss.uncached.*)";
-        }
-
         group (ordered, contiguous, align = 4, attributes=rw, run_addr=mem:dsram)
         {
             group lmubss(attributes=rw, nocopy)
@@ -548,12 +542,35 @@ derivative tc39
                 select "(.lmubss_cpu?|.lmubss_cpu?.*)";
             }
 
-            group data(attributes=rw)
+            /* .data and .bss as one block each, which the startup code in
+             * tricore_head copies and clears itself.  They also take the
+             * uncached sections of the atomic objects, as nothing here is
+             * mapped cached.
+             */
+
+            group data(ordered, contiguous, align = 4, attributes=rwu)
             {
                 select "(.data|.data.*)";
+            }
+
+            group bss(ordered, contiguous, align = 4, attributes=rwu)
+            {
                 select "(.bss|.bss.*)";
             }
         }
+
+        /* The ROM copies of .data, selected by name to get the order of RAM */
+
+        group data_rom(ordered, contiguous, align = 4, load_addr)
+        {
+            select "(.data|.data.*)";
+        }
+
+        "_data_flash" = "_lc_gb_data_rom";
+        "_sdata" = "_lc_gb_data";
+        "_edata" = "_lc_ge_data";
+        "_sbss" = "_lc_gb_bss";
+        "_ebss" = "_lc_ge_bss";
 
         /*Far Const Sections, selectable with patterns and user defined sections*/
         group
