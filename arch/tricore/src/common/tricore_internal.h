@@ -207,6 +207,10 @@ void tricore_start(void);          /* Start the other cores, enter NuttX */
 void tricore_start_cores(void);    /* Chip: release the other cores */
 void tricore_main(void);           /* Per core entry into NuttX */
 
+/* Clocks *******************************************************************/
+
+uint32_t tricore_clock_asclinf(void);
+
 /* Signal handling **********************************************************/
 
 void tricore_sigdeliver(void);
