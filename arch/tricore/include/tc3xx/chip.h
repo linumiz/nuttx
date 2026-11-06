@@ -63,6 +63,24 @@
 #define TRICORE_CBS_OSTATE         0xf0000480
 #define TRICORE_CBS_OSTATE_OEN     (1 << 0)
 
+/* ASCLIN0 (UART) and its register offsets */
+
+#define TRICORE_ASCLIN0_BASE       0xf0000600
+
+#define TRICORE_ASCLIN_CLC_OFFSET  0x000
+#define TRICORE_ASCLIN_IOCR_OFFSET 0x004
+#define TRICORE_ASCLIN_TXFIFOCON_OFFSET 0x00c
+#define TRICORE_ASCLIN_RXFIFOCON_OFFSET 0x010
+#define TRICORE_ASCLIN_BITCON_OFFSET 0x014
+#define TRICORE_ASCLIN_FRAMECON_OFFSET 0x018
+#define TRICORE_ASCLIN_DATCON_OFFSET 0x01c
+#define TRICORE_ASCLIN_BRG_OFFSET  0x020
+#define TRICORE_ASCLIN_FLAGSCLEAR_OFFSET 0x03c
+#define TRICORE_ASCLIN_FLAGSENABLE_OFFSET 0x040
+#define TRICORE_ASCLIN_TXDATA_OFFSET 0x044
+#define TRICORE_ASCLIN_RXDATA_OFFSET 0x048
+#define TRICORE_ASCLIN_CSR_OFFSET  0x04c
+
 /****************************************************************************
  * Pre-processor Prototypes
  ****************************************************************************/

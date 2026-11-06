@@ -59,6 +59,24 @@
 #define TRICORE_STM_OCS_SUS_MASK   (0xf << 24)
 #define TRICORE_STM_OCS_SUS_P      (1 << 28)   /* SUS write protection */
 
+/* ASCLIN0 (UART) and its register offsets */
+
+#define TRICORE_ASCLIN0_BASE       0xf46c0000
+
+#define TRICORE_ASCLIN_CLC_OFFSET  0x000
+#define TRICORE_ASCLIN_IOCR_OFFSET 0x100
+#define TRICORE_ASCLIN_TXFIFOCON_OFFSET 0x104
+#define TRICORE_ASCLIN_RXFIFOCON_OFFSET 0x108
+#define TRICORE_ASCLIN_BITCON_OFFSET 0x10c
+#define TRICORE_ASCLIN_FRAMECON_OFFSET 0x110
+#define TRICORE_ASCLIN_DATCON_OFFSET 0x114
+#define TRICORE_ASCLIN_BRG_OFFSET  0x118
+#define TRICORE_ASCLIN_FLAGSCLEAR_OFFSET 0x134
+#define TRICORE_ASCLIN_FLAGSENABLE_OFFSET 0x138
+#define TRICORE_ASCLIN_CSR_OFFSET  0x13c
+#define TRICORE_ASCLIN_TXDATA_OFFSET 0x140
+#define TRICORE_ASCLIN_RXDATA_OFFSET 0x160
+
 /****************************************************************************
  * Pre-processor Prototypes
  ****************************************************************************/
