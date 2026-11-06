@@ -41,15 +41,34 @@
 
 #include <arch/board/board.h>
 
-#include "tricore_internal.h"
+#include <arch/chip/chip.h>
 
-#include "Asclin/Asc/IfxAsclin_Asc.h"
+#include "tricore_internal.h"
+#include "tricore_asclin.h"
+#include "tc3xx_wdt.h"
 
 #include <chip.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+/* Port registers and modes of the UART pins */
+
+#define TC3XX_PORT_IOCR0_OFFSET    0x10
+#define TC3XX_PORT_PDR0_OFFSET     0x40
+
+#define ASCLIN_PIN_RX_MODE         0x10        /* Input with pull-up */
+#define ASCLIN_PIN_TX_MODE         0x90        /* Push-pull, alternate 2 */
+#define ASCLIN_PIN_PAD             0           /* CMOS automotive speed 1 */
+#define ASCLIN_PIN_PORT            TC3XX_UART0_PORT
+#define ASCLIN_PIN_RX              TC3XX_UART0_RX_PIN
+#define ASCLIN_PIN_TX              TC3XX_UART0_TX_PIN
+
+/* ASCLIN register of a UART */
+
+#define ASCLIN_REG(priv, reg) \
+  ((priv)->uartbase + TRICORE_ASCLIN_##reg##_OFFSET)
 
 /* If we are not using the serial driver for the console, then we still must
  * provide some minimal implementation of up_putc.
@@ -104,8 +123,7 @@
 
 struct up_dev_s
 {
-  volatile void *uartbase; /* Base address of UART registers */
-  const void    *pins;     /* Pin configuration */
+  uintptr_t      uartbase; /* Base address of UART registers */
   uint32_t       baud;     /* Configured baud */
   uint8_t        irq;      /* IRQ associated with this UART */
 };
@@ -162,21 +180,9 @@ static char g_uart0txbuffer[CONFIG_UART0_TXBUFSIZE];
 
 #ifdef CONFIG_TC3XX_UART0
 
-/* Pin configuration */
-
-static const IfxAsclin_Asc_Pins g_uart0_pins =
-{
-  NULL,           IfxPort_InputMode_pullUp,     /* CTS pin not used */
-  &UART_PIN_RX,   IfxPort_InputMode_pullUp,     /* RX pin           */
-  NULL,           IfxPort_OutputMode_pushPull,  /* RTS pin not used */
-  &UART_PIN_TX,   IfxPort_OutputMode_pushPull,  /* TX pin           */
-  IfxPort_PadDriver_cmosAutomotiveSpeed1
-};
-
 static struct up_dev_s g_uart0priv =
 {
-  .uartbase  = &MODULE_ASCLIN0,
-  .pins      = &g_uart0_pins,
+  .uartbase  = TRICORE_ASCLIN0_BASE,
   .baud      = CONFIG_UART0_BAUD,
   .irq       = TRICORE_UART_RX_IRQ,
 };
@@ -206,175 +212,154 @@ static uart_dev_t g_uart0port =
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: asclin_pin_mode
+ *
+ * Description:
+ *   Set the mode of a port pin in its IOCR byte.
+ *
+ ****************************************************************************/
+
+static void asclin_pin_mode(uintptr_t port, int pin, uint32_t mode)
+{
+  uintptr_t iocr = port + TC3XX_PORT_IOCR0_OFFSET + (pin / 4) * 4;
+  int shift = (pin & 3) * 8;
+
+  putreg32((getreg32(iocr) & ~(0xff << shift)) | (mode << shift), iocr);
+}
+
+/****************************************************************************
+ * Name: asclin_pin_pad
+ *
+ * Description:
+ *   Set the pad driver of a port pin, which is ENDINIT protected.
+ *
+ ****************************************************************************/
+
+static void asclin_pin_pad(uintptr_t port, int pin, uint32_t pad)
+{
+  uintptr_t pdr = port + TC3XX_PORT_PDR0_OFFSET + (pin / 8) * 4;
+  int shift = (pin & 7) * 4;
+
+  tc3xx_wdt_cpu_endinit(false);
+  putreg32((getreg32(pdr) & ~(0xf << shift)) | (pad << shift), pdr);
+  tc3xx_wdt_cpu_endinit(true);
+}
+
+/****************************************************************************
+ * Name: asclin_modify
+ ****************************************************************************/
+
+static void asclin_modify(uintptr_t reg, uint32_t clear, uint32_t set)
+{
+  putreg32((getreg32(reg) & ~clear) | set, reg);
+}
+
+/****************************************************************************
+ * Name: asclin_set_clock
+ *
+ * Description:
+ *   Select the ASCLIN clock and wait until it is on or off.
+ *
+ ****************************************************************************/
+
+static void asclin_set_clock(struct up_dev_s *priv, uint32_t clksel)
+{
+  uint32_t on = clksel == ASCLIN_CSR_CLKSEL_NONE ? 0 : ASCLIN_CSR_CON;
+
+  asclin_modify(ASCLIN_REG(priv, CSR), ASCLIN_CSR_CLKSEL_MASK, clksel);
+  while ((getreg32(ASCLIN_REG(priv, CSR)) & ASCLIN_CSR_CON) != on);
+}
+
+/****************************************************************************
  * Name: asclin_init
  *
  * Description:
  *   Configure the UART baud, bits, parity, etc. This method is called the
- *   first time that the serial port is opened.
+ *   first time that the serial port is opened.  8N1, 16 times oversampling
+ *   with three samples at sample point 8, FIFO interrupts at one byte.
  *
  ****************************************************************************/
 
 static void asclin_init(struct up_dev_s *priv)
 {
-  Ifx_ASCLIN *asclin = priv->uartbase;
-  const IfxAsclin_Asc_Pins *pins = priv->pins;
+  struct tricore_asclin_brg_s brg;
+  uint32_t prescaler;
 
-  /* enabling the module */
+  /* Enable the module */
 
-  IfxAsclin_enableModule(asclin);
+  tc3xx_wdt_cpu_endinit(false);
+  asclin_modify(ASCLIN_REG(priv, CLC), ASCLIN_CLC_DISR, 0);
+  tc3xx_wdt_cpu_endinit(true);
 
-  /* disabling the clock */
+  /* Initialise mode, prescaler 1 */
 
-  IfxAsclin_setClockSource(asclin, IfxAsclin_ClockSource_noClock);
+  asclin_set_clock(priv, ASCLIN_CSR_CLKSEL_NONE);
+  asclin_modify(ASCLIN_REG(priv, FRAMECON), ASCLIN_FRAMECON_MODE_MASK,
+                ASCLIN_FRAMECON_MODE_INIT);
+  asclin_modify(ASCLIN_REG(priv, BITCON), ASCLIN_BITCON_PRESCALER_MASK, 0);
 
-  /* setting the module in Initialise mode */
+  /* Baud rate from the fast ASCLIN clock */
 
-  IfxAsclin_setFrameMode(asclin, IfxAsclin_FrameMode_initialise);
+  asclin_set_clock(priv, ASCLIN_CSR_CLKSEL_FAST);
+  prescaler = (getreg32(ASCLIN_REG(priv, BITCON)) &
+               ASCLIN_BITCON_PRESCALER_MASK) + 1;
+  tricore_asclin_brg(tricore_clock_asclinf(), prescaler, priv->baud, 16,
+                     &brg);
 
-  /* sets the prescaler */
+  asclin_set_clock(priv, ASCLIN_CSR_CLKSEL_NONE);
+  asclin_modify(ASCLIN_REG(priv, BRG),
+                ASCLIN_BRG_DENOMINATOR_MASK | ASCLIN_BRG_NUMERATOR_MASK,
+                brg.denominator |
+                (brg.numerator << ASCLIN_BRG_NUMERATOR_SHIFT));
+  asclin_modify(ASCLIN_REG(priv, BITCON),
+                ASCLIN_BITCON_PRESCALER_MASK | ASCLIN_BITCON_OVS_MASK |
+                ASCLIN_BITCON_SP_MASK | ASCLIN_BITCON_SM,
+                (brg.prescaler - 1) |
+                ((brg.oversampling - 1) << ASCLIN_BITCON_OVS_SHIFT) |
+                (8 << ASCLIN_BITCON_SP_SHIFT) | ASCLIN_BITCON_SM);
+  asclin_set_clock(priv, ASCLIN_CSR_CLKSEL_FAST);
+  asclin_set_clock(priv, ASCLIN_CSR_CLKSEL_NONE);
 
-  IfxAsclin_setPrescaler(asclin, 1);
-
-  /* temporary set the clock source for baudrate configuration */
-
-  IfxAsclin_setClockSource(asclin, IfxAsclin_ClockSource_ascFastClock);
-
-  /* setting the baudrate bit fields to generate the required baudrate */
-
-  IfxAsclin_setBitTiming(asclin, priv->baud,
-                         IfxAsclin_OversamplingFactor_16,
-                         IfxAsclin_SamplePointPosition_8,
-                         IfxAsclin_SamplesPerBit_three);
-
-  /* disabling the clock again */
-
-  IfxAsclin_setClockSource(asclin, IfxAsclin_ClockSource_noClock);
-
-  /* selecting the loopback mode */
-
-  IfxAsclin_enableLoopBackMode(asclin, false);
-
-  /* setting parity enable */
-
-  IfxAsclin_enableParity(asclin, false);
-
-  /* setting parity type (odd/even) */
-
-  IfxAsclin_setParityType(asclin, IfxAsclin_ParityType_even);
-
-  /* setting the stop bit */
-
-  IfxAsclin_setStopBit(asclin, IfxAsclin_StopBit_1);
-
-  /* setting the shift direction */
-
-  IfxAsclin_setShiftDirection(asclin,
-    IfxAsclin_ShiftDirection_lsbFirst);
-
-  /* setting the data length */
-
-  IfxAsclin_setDataLength(asclin, IfxAsclin_DataLength_8);
-
-  /* setting Tx FIFO inlet width */
-
-  IfxAsclin_setTxFifoInletWidth(asclin,
-    IfxAsclin_TxFifoInletWidth_1);
-
-  /* setting Rx FIFO outlet width */
-
-  IfxAsclin_setRxFifoOutletWidth(asclin,
-    IfxAsclin_RxFifoOutletWidth_1);
-
-  /* setting idle delay */
-
-  IfxAsclin_setIdleDelay(asclin, IfxAsclin_IdleDelay_0);
-
-  /* setting Tx FIFO level at which a Tx interrupt will be triggered */
-
-  IfxAsclin_setTxFifoInterruptLevel(asclin,
-    IfxAsclin_TxFifoInterruptLevel_0);
-
-  /* setting Rx FIFO interrupt level at which a Rx
-   * interrupt will be triggered
+  /* No loop back, 8 data bits, no parity, 1 stop bit, LSB first, one byte
+   * wide FIFO accesses, interrupts at the FIFO level, ASC mode
    */
 
-  IfxAsclin_setRxFifoInterruptLevel(asclin,
-    IfxAsclin_RxFifoInterruptLevel_1);
+  asclin_modify(ASCLIN_REG(priv, IOCR), ASCLIN_IOCR_LB, 0);
+  asclin_modify(ASCLIN_REG(priv, FRAMECON),
+                ASCLIN_FRAMECON_PEN | ASCLIN_FRAMECON_ODD |
+                ASCLIN_FRAMECON_STOP_MASK | ASCLIN_FRAMECON_MSB |
+                ASCLIN_FRAMECON_IDLE_MASK,
+                1 << ASCLIN_FRAMECON_STOP_SHIFT);
+  asclin_modify(ASCLIN_REG(priv, DATCON), ASCLIN_DATCON_DATLEN_MASK, 8 - 1);
+  asclin_modify(ASCLIN_REG(priv, TXFIFOCON),
+                ASCLIN_FIFOCON_W_MASK | ASCLIN_FIFOCON_INTLEVEL_MASK |
+                ASCLIN_FIFOCON_FM_MASK, 1 << ASCLIN_FIFOCON_W_SHIFT);
+  asclin_modify(ASCLIN_REG(priv, RXFIFOCON),
+                ASCLIN_FIFOCON_W_MASK | ASCLIN_FIFOCON_INTLEVEL_MASK |
+                ASCLIN_FIFOCON_FM_MASK, 1 << ASCLIN_FIFOCON_W_SHIFT);
+  asclin_modify(ASCLIN_REG(priv, FRAMECON), ASCLIN_FRAMECON_MODE_MASK,
+                ASCLIN_FRAMECON_MODE_ASC);
 
-  /* setting Tx FIFO interrupt generation mode */
+  /* Pins: RX input A with pull-up, TX push-pull */
 
-  IfxAsclin_setTxFifoInterruptMode(asclin,
-    IfxAsclin_FifoInterruptMode_combined);
+  asclin_pin_mode(ASCLIN_PIN_PORT, ASCLIN_PIN_RX, ASCLIN_PIN_RX_MODE);
+  asclin_pin_pad(ASCLIN_PIN_PORT, ASCLIN_PIN_RX, ASCLIN_PIN_PAD);
+  asclin_modify(ASCLIN_REG(priv, IOCR), ASCLIN_IOCR_ALTI_MASK, 0);
+  asclin_pin_mode(ASCLIN_PIN_PORT, ASCLIN_PIN_TX, ASCLIN_PIN_TX_MODE);
+  asclin_pin_pad(ASCLIN_PIN_PORT, ASCLIN_PIN_TX, ASCLIN_PIN_PAD);
 
-  /* setting Rx FIFO interrupt generation mode */
+  /* Clock on, error flags enabled, FIFOs enabled and flushed */
 
-  IfxAsclin_setRxFifoInterruptMode(asclin,
-    IfxAsclin_FifoInterruptMode_combined);
-
-  /* selecting the frame mode */
-
-  IfxAsclin_setFrameMode(asclin, IfxAsclin_FrameMode_asc);
-
-  /* Pin mapping */
-
-  if (pins != NULL)
-    {
-      IfxAsclin_Cts_In *cts = pins->cts;
-
-      if (cts != NULL)
-        {
-          IfxAsclin_initCtsPin(cts, pins->ctsMode, pins->pinDriver);
-        }
-
-      IfxAsclin_Rx_In *rx = pins->rx;
-
-      if (rx != NULL)
-        {
-          IfxAsclin_initRxPin(rx, pins->rxMode, pins->pinDriver);
-        }
-
-      IfxAsclin_Rts_Out *rts = pins->rts;
-
-      if (rts != NULL)
-        {
-          IfxAsclin_initRtsPin(rts, pins->rtsMode, pins->pinDriver);
-        }
-
-      IfxAsclin_Tx_Out *tx = pins->tx;
-
-      if (tx != NULL)
-        {
-          IfxAsclin_initTxPin(tx, pins->txMode, pins->pinDriver);
-        }
-    }
-
-  /* select the clock source */
-
-  IfxAsclin_setClockSource(asclin, IfxAsclin_ClockSource_ascFastClock);
-
-  /* disable all flags */
-
-  IfxAsclin_disableAllFlags(asclin);
-
-  /* clear all flags */
-
-  IfxAsclin_clearAllFlags(asclin);
-
-  /* HW error flags */
-
-  IfxAsclin_enableParityErrorFlag(asclin, true);
-  IfxAsclin_enableFrameErrorFlag(asclin, true);
-  IfxAsclin_enableRxFifoOverflowFlag(asclin, true);
-  IfxAsclin_enableRxFifoUnderflowFlag(asclin, true);
-  IfxAsclin_enableTxFifoOverflowFlag(asclin, true);
-
-  /* enable transfers */
-
-  IfxAsclin_enableRxFifoInlet(asclin, true);
-  IfxAsclin_enableTxFifoOutlet(asclin, true);
-
-  IfxAsclin_flushRxFifo(asclin);
-  IfxAsclin_flushTxFifo(asclin);
+  asclin_set_clock(priv, ASCLIN_CSR_CLKSEL_FAST);
+  putreg32(0, ASCLIN_REG(priv, FLAGSENABLE));
+  putreg32(0xffffffff, ASCLIN_REG(priv, FLAGSCLEAR));
+  asclin_modify(ASCLIN_REG(priv, FLAGSENABLE), 0,
+                ASCLIN_FLAGS_PE | ASCLIN_FLAGS_FE | ASCLIN_FLAGS_RFO |
+                ASCLIN_FLAGS_RFU | ASCLIN_FLAGS_TFO);
+  asclin_modify(ASCLIN_REG(priv, RXFIFOCON), 0, ASCLIN_FIFOCON_EN);
+  asclin_modify(ASCLIN_REG(priv, TXFIFOCON), 0, ASCLIN_FIFOCON_EN);
+  asclin_modify(ASCLIN_REG(priv, RXFIFOCON), 0, ASCLIN_FIFOCON_FLUSH);
+  asclin_modify(ASCLIN_REG(priv, TXFIFOCON), 0, ASCLIN_FIFOCON_FLUSH);
 }
 
 /****************************************************************************
@@ -525,7 +510,7 @@ static int up_receive(struct uart_dev_s *dev, unsigned int *status)
 {
   struct up_dev_s *priv = dev->priv;
 
-  return IfxAsclin_readRxData(priv->uartbase);
+  return getreg32(ASCLIN_REG(priv, RXDATA));
 }
 
 /****************************************************************************
@@ -541,8 +526,10 @@ static void up_rxint(struct uart_dev_s *dev, bool enable)
   struct up_dev_s *priv = dev->priv;
   irqstate_t flags = enter_critical_section();
 
-  IfxAsclin_enableRxFifoFillLevelFlag(priv->uartbase, enable);
-  IfxAsclin_enableRxFifoInlet(priv->uartbase, enable);
+  asclin_modify(ASCLIN_REG(priv, FLAGSENABLE), ASCLIN_FLAGS_RFL,
+                enable ? ASCLIN_FLAGS_RFL : 0);
+  asclin_modify(ASCLIN_REG(priv, RXFIFOCON), ASCLIN_FIFOCON_EN,
+                enable ? ASCLIN_FIFOCON_EN : 0);
 
   leave_critical_section(flags);
 }
@@ -559,7 +546,8 @@ static bool up_rxavailable(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = dev->priv;
 
-  return IfxAsclin_getRxFifoFillLevel(priv->uartbase) > 0;
+  return (getreg32(ASCLIN_REG(priv, RXFIFOCON)) &
+          ASCLIN_FIFOCON_FILL_MASK) != 0;
 }
 
 /****************************************************************************
@@ -582,10 +570,11 @@ static void up_send(struct uart_dev_s *dev, int ch)
       return;
     }
 
-  while (IfxAsclin_getTxFifoFillLevel(priv->uartbase) != 0);
+  while ((getreg32(ASCLIN_REG(priv, TXFIFOCON)) &
+          ASCLIN_FIFOCON_FILL_MASK) != 0);
 
-  IfxAsclin_clearAllFlags(priv->uartbase);
-  IfxAsclin_writeTxData(priv->uartbase, ch);
+  putreg32(0xffffffff, ASCLIN_REG(priv, FLAGSCLEAR));
+  putreg32(ch, ASCLIN_REG(priv, TXDATA));
 }
 
 /****************************************************************************
@@ -639,7 +628,8 @@ static bool up_txempty(struct uart_dev_s *dev)
 
   /* Return true if the TX wartermak is pending */
 
-  return IfxAsclin_getTxFifoFillLevel(priv->uartbase) != 0;
+  return (getreg32(ASCLIN_REG(priv, TXFIFOCON)) &
+          ASCLIN_FIFOCON_FILL_MASK) != 0;
 }
 
 /****************************************************************************
@@ -657,10 +647,11 @@ void tricore_lowputc(char ch)
 
   /* Wait for FIFO */
 
-  while (IfxAsclin_getTxFifoFillLevel(priv->uartbase) != 0);
+  while ((getreg32(ASCLIN_REG(priv, TXFIFOCON)) &
+          ASCLIN_FIFOCON_FILL_MASK) != 0);
 
-  IfxAsclin_clearAllFlags(priv->uartbase);
-  IfxAsclin_writeTxData(priv->uartbase, ch);
+  putreg32(0xffffffff, ASCLIN_REG(priv, FLAGSCLEAR));
+  putreg32(ch, ASCLIN_REG(priv, TXDATA));
 #endif /* HAVE_CONSOLE */
 }
 

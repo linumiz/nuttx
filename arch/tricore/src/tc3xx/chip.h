@@ -27,7 +27,10 @@
  * Included Files
  ****************************************************************************/
 
-#define UART_PIN_RX IfxAsclin0_RXA_P14_1_IN     /* UART receive port pin  */
-#define UART_PIN_TX IfxAsclin0_TX_P14_0_OUT     /* UART transmit port pin */
+/* UART0 pins: ASCLIN0 RXA on P14.1, TX on P14.0 (alternate output 2) */
+
+#define TC3XX_UART0_PORT           0xf003ae00  /* P14 */
+#define TC3XX_UART0_RX_PIN         1
+#define TC3XX_UART0_TX_PIN         0
 
 #endif /* __ARCH_TRICORE_SRC_TC3XX_CHIP_H */
