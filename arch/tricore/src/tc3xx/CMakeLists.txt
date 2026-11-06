@@ -117,12 +117,9 @@ set_property(
 
 set(SDK_CSRCS
     "${CONFIG_DIR}/Ifx_Cfg_Ssw.c"
-    "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/Asclin/Std/IfxAsclin.c"
     "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/Cpu/Std/IfxCpu.c"
-    "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/_Impl/IfxAsclin_cfg.c"
     "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/_Impl/IfxCpu_cfg.c"
     "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/_Impl/TC39xB/IfxPort_cfg_TC39xB.c"
-    "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/_PinMap/TC39xB/IfxAsclin_PinMap_TC39xB_LFBGA292.c"
     "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/Pms/Std/IfxPmsEvr.c"
     "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/Pms/Std/IfxPmsPm.c"
     "${ILLD_DIR}/Libraries/iLLD/TC3xx/Tricore/Port/Std/IfxPort.c"
