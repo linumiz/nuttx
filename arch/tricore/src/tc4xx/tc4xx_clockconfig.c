@@ -104,6 +104,7 @@
 #define TC4XX_CCU_CLKSELS_RAMP     2
 #define TC4XX_CCU_CLKSELP          (1 << 16)   /* Set: backup clock */
 #define TC4XX_CCUCON_UP            (1 << 30)   /* SYSCCUCON0 and 1 */
+#define TC4XX_PERCCUCON1_ASCLINFDIV (0xf << 0)
 
 /* SMU alarms 272 and 273: system and peripheral PLL crystal clock out of
  * range, in alarm group 8 of SMU_SAFE0
@@ -503,6 +504,63 @@ static int tc4xx_clock_switch(void)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: tricore_clock_asclinf
+ *
+ * Description:
+ *   Return the fast ASCLIN clock (fASCLINF), from the peripheral PLL
+ *   output 2 and the ASCLINF divider, computed as the iLLD IfxClock does.
+ *
+ ****************************************************************************/
+
+float tricore_clock_asclinf(void)
+{
+  static const uint8_t divs[16] =
+  {
+    1, 1, 2, 3, 4, 5, 6, 6, 8, 8, 10, 10, 12, 12, 12, 15
+  };
+
+  static const uint8_t prediv[16] =
+  {
+    10, 11, 12, 10, 14, 10, 16, 17, 10, 10, 20, 10, 10, 10, 10, 10
+  };
+
+  uint32_t div = getreg32(TC4XX_CLOCK_PERCCUCON1) &
+                 TC4XX_PERCCUCON1_ASCLINFDIV;
+  uint32_t con0 = getreg32(TC4XX_CLOCK_PERPLLCON0);
+  uint32_t con1 = getreg32(TC4XX_CLOCK_PERPLLCON1);
+  uint32_t stat = getreg32(TC4XX_CLOCK_PERPLLSTAT);
+  uint64_t pll2;
+
+  if (div == 0)
+    {
+      return 0.0f;
+    }
+
+  if ((getreg32(TC4XX_CLOCK_CCUSTAT) & TC4XX_CCU_CLKSELP) != 0)
+    {
+      return (float)(100000000u / divs[div]);
+    }
+
+  if ((stat & (TC4XX_PLLSTAT_PLLLOCK | TC4XX_PLLSTAT_PWRSTAT)) !=
+      (TC4XX_PLLSTAT_PLLLOCK | TC4XX_PLLSTAT_PWRSTAT))
+    {
+      return 0.0f;
+    }
+
+  pll2 = ((uint64_t)TC4XX_XTAL_MHZ * 1000000 *
+          (((con0 & TC4XX_PLLCON0_NDIV_MASK) >> TC4XX_PLLCON0_NDIV_SHIFT) +
+           1) * 10) /
+         ((((con0 & TC4XX_PLLCON0_PDIV_MASK) >> TC4XX_PLLCON0_PDIV_SHIFT) +
+           1) *
+          (((con1 & TC4XX_PLLCON1_K3DIV_MASK) >> TC4XX_PLLCON1_K3DIV_SHIFT) +
+           1) *
+          prediv[(con1 & TC4XX_PLLCON1_K3PRE_MASK) >>
+                 TC4XX_PLLCON1_K3PRE_SHIFT]);
+
+  return (float)(uint32_t)(pll2 / divs[div]);
+}
 
 /****************************************************************************
  * Name: tricore_clockconfig

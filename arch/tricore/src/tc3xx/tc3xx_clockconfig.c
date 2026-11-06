@@ -51,6 +51,8 @@
 #define TC3XX_SCU_CCUCON5          0xf003604c
 #define TC3XX_SCU_CCUCON6          0xf0036080  /* CCUCON6 to CCUCON11 */
 
+#define TC3XX_CCUCON2_ASCLINFDIV   (0xf << 0)
+
 #define TC3XX_OSCCON_PLLLV         (1 << 1)
 #define TC3XX_OSCCON_MODE_MASK     (0x3 << 5)
 #define TC3XX_OSCCON_PLLHV         (1 << 8)
@@ -454,6 +456,52 @@ static int tc3xx_pll_ramp_up(void)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: tricore_clock_asclinf
+ *
+ * Description:
+ *   Return the fast ASCLIN clock (fASCLINF), from the peripheral PLL2 and
+ *   the ASCLINF divider, computed as the iLLD IfxScuCcu does.
+ *
+ ****************************************************************************/
+
+float tricore_clock_asclinf(void)
+{
+  static const uint8_t divs[16] =
+  {
+    1, 1, 2, 3, 4, 5, 6, 6, 8, 8, 10, 10, 12, 12, 12, 15
+  };
+
+  uint32_t div = getreg32(TC3XX_SCU_CCUCON2) & TC3XX_CCUCON2_ASCLINFDIV;
+  uint32_t con0 = getreg32(TC3XX_SCU_PERPLLCON0);
+  uint32_t con1 = getreg32(TC3XX_SCU_PERPLLCON1);
+  float osc = TC3XX_XTAL_MHZ * 1000000.0f;
+  float pll2;
+
+  if (div == 0)
+    {
+      return 0.0f;
+    }
+
+  /* Backup clock, 100 MHz */
+
+  if ((getreg32(TC3XX_SCU_CCUCON0) & TC3XX_CCUCON0_CLKSEL_MASK) !=
+      TC3XX_CCUCON0_CLKSEL_PLL)
+    {
+      return 100000000.0f / divs[div];
+    }
+
+  pll2 = (osc * (((con0 & TC3XX_PLLCON0_NDIV_MASK) >>
+                  TC3XX_PLLCON0_NDIV_SHIFT) + 1)) /
+         ((((con0 & TC3XX_PLLCON0_PDIV_MASK) >> TC3XX_PLLCON0_PDIV_SHIFT) +
+           1) *
+          (((con1 & TC3XX_PLLCON1_K3DIV_MASK) >> TC3XX_PLLCON1_K3DIV_SHIFT) +
+           1) *
+          ((con0 & TC3XX_PLLCON0_DIVBY) != 0 ? 2.0f : 1.6f));
+
+  return pll2 / divs[div];
+}
 
 /****************************************************************************
  * Name: tricore_clockconfig
