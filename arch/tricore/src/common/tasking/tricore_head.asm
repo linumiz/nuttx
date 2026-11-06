@@ -24,6 +24,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <nuttx/config.h>
 #include <arch/csfr.h>
 
 /****************************************************************************
@@ -33,7 +34,12 @@
 #define TRICORE_PSW_RESET  0x980   /* Supervisor, call depth counting on */
 #define TRICORE_BIV_VECTOR 0x1fe0  /* Single interrupt vector at INTTAB + 0x1fe0 */
 
-#define TC3XX_WDTCPU0_CON0 0xf003624c  /* CPU0 watchdog CON0, 0xc apart per CPU */
+#ifdef CONFIG_ARCH_CHIP_TC3XX
+#  define TC3XX_WDTCPU0_CON0 0xf003624c  /* CPU0 watchdog CON0, 0xc apart per CPU */
+#endif
+#ifdef CONFIG_ARCH_CHIP_TC4XX
+#  define TC4XX_PSW_VIRT   0xb00       /* PSW for disabling the virtualization */
+#endif
 
 /* Make the CSA link word of the CSA address in addr: the segment in bits
  * 19:16 and the offset in bits 15:0.
@@ -64,6 +70,10 @@ tricore_csa_link .macro addr, tmp1, tmp2
 	.extern	__A9_MEM
 	.extern	__TRAPTAB_CPU0
 	.extern	__INTTAB_CPU0
+#ifdef CONFIG_ARCH_CHIP_TC4XX
+	.extern	__PSRAM_USTACK
+	.extern	__PSRAM_BOOT_CSA
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -84,12 +94,34 @@ tricore_csa_link .macro addr, tmp1, tmp2
  *   On TC3xx BTV, BIV, ISP, PCON0 and DCON0 are CPU ENDINIT protected,
  *   so the ENDINIT of the CPU watchdog is cleared around them.
  *
+ *   TC4xx first disables the virtualization with a call to
+ *   tricore_virt_off, using the boot stack and the single boot CSA in the
+ *   PSPR that the linker script gives, as the iLLD startup code does.
+ *
  ****************************************************************************/
 
 	.sdecl	".text.tricore_head",code
 	.sect	".text.tricore_head"
 tricore_head:
+#ifdef CONFIG_ARCH_CHIP_TC3XX
 	jl	tc3xx_endinit_clear
+
+#endif
+	movh.a	a15, #@HIS(__TRAPTAB_CPU0)
+	lea	a15, [a15]@LOS(__TRAPTAB_CPU0)
+	mov.d	d15, a15
+	mtcr	#TRICORE_CPU_BTV, d15
+	isync
+
+#ifdef CONFIG_ARCH_CHIP_TC4XX
+	movh.a	a15, #@HIS(__PSRAM_BOOT_CSA)
+	lea	a15, [a15]@LOS(__PSRAM_BOOT_CSA)
+	mov.d	d15, a15
+	tricore_csa_link d15, d14, d13
+	mtcr	#TRICORE_CPU_FCX, d15
+	isync
+
+	call	tricore_virt_off
 
 	movh.a	a15, #@HIS(__TRAPTAB_CPU0)
 	lea	a15, [a15]@LOS(__TRAPTAB_CPU0)
@@ -97,6 +129,7 @@ tricore_head:
 	mtcr	#TRICORE_CPU_BTV, d15
 	isync
 
+#endif
 	; Caches on, interrupt vector, interrupt stack
 
 	mov	d15, #0
@@ -140,8 +173,10 @@ tricore_head:
 	mtcr	#TRICORE_CPU_LCX, d15
 	isync
 
+#ifdef CONFIG_ARCH_CHIP_TC3XX
 	jl	tc3xx_endinit_set
 
+#endif
 	movh.a	a10, #@HIS(__USTACK0)
 	lea	a10, [a10]@LOS(__USTACK0)
 	dsync
@@ -201,6 +236,7 @@ tricore_head:
 	lea	a15, [a15]@LOS(tricore_start)
 	ji	a15
 
+#ifdef CONFIG_ARCH_CHIP_TC3XX
 /****************************************************************************
  * Name: tc3xx_endinit_clear, tc3xx_endinit_set
  *
@@ -245,6 +281,26 @@ tc3xx_endinit_set:
 	extr.u	d15, d15, #0, #1
 	jne	d15, d5, 4p
 	ji	a11
+#endif
+
+#ifdef CONFIG_ARCH_CHIP_TC4XX
+/****************************************************************************
+ * Name: tricore_virt_off
+ *
+ * Description:
+ *   Disable the virtualization and return with rfh.
+ *
+ ****************************************************************************/
+
+tricore_virt_off:
+	mov	d0, #0
+	mtcr	#TRICORE_CPU_VCON0, d0
+	isync
+	mov	d0, #TC4XX_PSW_VIRT
+	mtcr	#TRICORE_CPU_PSW, d0
+	isync
+	rfh
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -266,8 +322,13 @@ tc3xx_endinit_set:
 	.sect	".text.start"
 	.global	__start
 __start:
+#ifdef CONFIG_ARCH_CHIP_TC4XX
+	movh.a	a10, #@HIS(__PSRAM_USTACK)
+	lea	a10, [a10]@LOS(__PSRAM_USTACK)
+#else
 	movh.a	a10, #@HIS(__USTACK0)
 	lea	a10, [a10]@LOS(__USTACK0)
+#endif
 	dsync
 	movh.a	a15, #@HIS(tricore_head)
 	lea	a15, [a15]@LOS(tricore_head)

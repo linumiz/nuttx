@@ -108,18 +108,6 @@ void tricore_main(void)
  * Public Functions
  ****************************************************************************/
 
-void core0_main(void)
-{
-  /* All WDTs except WDTCPU0 and system watchdog WDTSYS are in
-   * disabled mode after Boot-FW execution. Disable the watchdog
-   * to ensure the normal startup of the system.
-   */
-
-  tricore_wdt_disable();
-
-  tricore_main();
-}
-
 void core1_main(void)
 {
   tricore_main();

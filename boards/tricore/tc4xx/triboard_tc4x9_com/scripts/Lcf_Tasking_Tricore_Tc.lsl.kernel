@@ -198,7 +198,7 @@ derivative tc4D
         start_address
         (
 #if CONFIG_CPU_COREID == 0
-            symbol = "_START"
+            symbol = "__start"
 #elif CONFIG_CPU_COREID == 1
             symbol = "_START1"
 #elif CONFIG_CPU_COREID == 2
@@ -284,7 +284,7 @@ derivative tc4D
             "__CSA0_END":= "__CSA_END";
         }
 
-        /*Fixed memory Allocations for _START*/
+        /*Fixed memory Allocations for __start*/
         group (ordered)
         {
           group  interface_const (run_addr=mem:pfls[0x0020])
@@ -293,6 +293,14 @@ derivative tc4D
           }
           "__IF_CONST" := addressof(group:interface_const);
           "__START0" := CORE0_PFLASH_KERNEL_START;
+
+          /* Boot stack and single boot CSA in the PSPR, which the startup
+           * code uses to disable the virtualization before it links the
+           * CSAs
+           */
+
+          "__PSRAM_USTACK" := 0x7010eb00;
+          "__PSRAM_BOOT_CSA" := 0x7010ec00;
           "__START1" := CORE1_PFLASH_KERNEL_START;
           "__START2" := CORE2_PFLASH_KERNEL_START;
           "__START3" := CORE3_PFLASH_KERNEL_START;
@@ -556,12 +564,6 @@ derivative tc4D
         }
 
         /*LMU Data sections*/
-        group uncached_data(ordered, contiguous, align = 4, attributes=rw, run_addr = mem:cpu_dlmu/not_cached)
-        {
-            select "(.data.uncached.*)";
-            select "(.bss.uncached.*)";
-        }
-
         group (ordered, contiguous, align = 4, attributes=rw, run_addr=mem:cpu_dlmu)
         {
             group lmubss(attributes=rw, nocopy)
@@ -569,9 +571,19 @@ derivative tc4D
                 select "(.lmubss_cpu?|.lmubss_cpu?.*)";
             }
 
-            group data(attributes=rw)
+            /* .data and .bss as one block each, which the startup code in
+             * tricore_head copies and clears itself.  They also take the
+             * uncached sections of the atomic objects, as nothing here is
+             * mapped cached.
+             */
+
+            group data(ordered, contiguous, align = 4, attributes=rwu)
             {
                 select "(.data|.data.*)";
+            }
+
+            group bss(ordered, contiguous, align = 4, attributes=rwu)
+            {
                 select "(.bss|.bss.*)";
             }
 
@@ -580,9 +592,22 @@ derivative tc4D
             {
                 heap "heap2" (size = LCF_HEAP_SIZE);
             }
-            "__DLMUHEAP":="_lc_ge_data";
+            "__DLMUHEAP":="_lc_ge_bss";
             "__DLMUHEAP_END":=LCF_DLMU_KERNEL_START + LCF_DLMU_KERNEL_SIZE;
         }
+
+        /* The ROM copies of .data, selected by name to get the order of RAM */
+
+        group data_rom(ordered, contiguous, align = 4, load_addr)
+        {
+            select "(.data|.data.*)";
+        }
+
+        "_data_flash" = "_lc_gb_data_rom";
+        "_sdata" = "_lc_gb_data";
+        "_edata" = "_lc_ge_data";
+        "_sbss" = "_lc_gb_bss";
+        "_ebss" = "_lc_ge_bss";
 
         /*Far Const Sections, selectable with patterns and user defined sections*/
         group

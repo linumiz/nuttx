@@ -36,10 +36,17 @@
 OUTPUT_FORMAT("elf32-tricore")
 OUTPUT_ARCH("tricore")
 #if CONFIG_CPU_COREID == 0
-ENTRY(_START)
+ENTRY(__start)
 #endif
 
 __TRICORE_DERIVATE_MEMORY_MAP__ = 0x490;
+
+/* Boot stack and single boot CSA in the PSPR, which the startup code uses
+ * to disable the virtualization before it links the CSAs
+ */
+
+__PSRAM_USTACK   = 0x7010eb00;
+__PSRAM_BOOT_CSA = 0x7010ec00;
 
 LCF_PFLASH_KERNEL_START = GENERATE_CORE_PFLASH_KERNEL_START(CONFIG_CPU_COREID);
 LCF_PFLASH_KERNEL_SIZE  = GENERATE_CORE_PFLASH_KERNEL_SIZE(CONFIG_CPU_COREID);
@@ -136,7 +143,7 @@ SECTIONS
     }
 }
 
-/*Fixed memory Allocations for _START*/
+/*Fixed memory Allocations for __start*/
 CORE_ID = GLOBAL ;
 SECTIONS
 {
@@ -340,7 +347,27 @@ SECTIONS
         *(.lmubss_cpu?.*)
         *(.gnu.linkonce.b.*)
     } > cpu_dlmu
+
+    /* .data and .bss for the startup code in tricore_head, which copies and
+     * clears them as one block each, so the other data sections of this
+     * script have to stay empty
+     */
+
+    _data_flash = LOADADDR(.data);
+    _sdata = ADDR(.data);
+    _edata = ADDR(.data) + SIZEOF(.data);
+    _sbss = ADDR(.bss);
+    _ebss = ALIGN(ADDR(.bss) + SIZEOF(.bss), 4);
 }
+
+ASSERT(SIZEOF(.dspr_data) + SIZEOF(.zdata) + SIZEOF(.sdata) +
+       SIZEOF(.sdata4) + SIZEOF(.psram_text) == 0,
+       "initialized data outside .data, the startup does not copy it")
+ASSERT(SIZEOF(.dspr_bss) + SIZEOF(.zbss) + SIZEOF(.sbss) +
+       SIZEOF(.sbss4) == 0,
+       "zeroed data outside .bss, the startup does not clear it")
+ASSERT(_sdata % 4 == 0 && _sbss % 4 == 0 && _data_flash % 4 == 0,
+       ".data and .bss have to be word aligned")
 
 /*Heap*/
 CORE_ID = GLOBAL;
