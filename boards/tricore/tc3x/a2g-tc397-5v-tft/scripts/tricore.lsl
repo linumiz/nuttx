@@ -1,0 +1,190 @@
+/****************************************************************************
+ * boards/tricore/tc3x/a2g-tc397-5v-tft/scripts/tricore.lsl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+#include <nuttx/config.h>
+
+#include "tc1v1_6_2.lsl"
+
+/* The memory map of tricore.ld for the TASKING locator.
+ * CPU0 only: program flash bank A and the data scratchpad RAM of CPU0.
+ * The CSA, the interrupt stack and the idle stack are at the top of the
+ * data scratchpad RAM, the heap below them.
+ */
+
+#define PFLS_BASE       0x80000000
+#define PFLS_SIZE       1536k
+#define DSPR_BASE       0x70000000
+#define DSPR_SIZE       240k
+
+#define CSA_SIZE        40k
+#define ISTACK_SIZE     CONFIG_ARCH_INTERRUPTSTACK
+#define USTACK_SIZE     CONFIG_IDLETHREAD_STACKSIZE
+
+#define CSA0_END        (DSPR_BASE + DSPR_SIZE)
+#define CSA0            (CSA0_END - CSA_SIZE)
+#define ISTACK0         CSA0
+#define ISTACK0_END     (ISTACK0 - ISTACK_SIZE)
+#define USTACK0         ISTACK0_END
+#define USTACK0_END     (USTACK0 - USTACK_SIZE)
+
+derivative nuttx_tc3x
+{
+  core tc0
+  {
+    architecture = TC1V1.6.2;
+  }
+
+  memory pfls
+  {
+    mau = 8;
+    type = rom;
+    size = PFLS_SIZE;
+    map (dest = bus:tc0:fpi_bus, dest_offset = PFLS_BASE, size = PFLS_SIZE);
+  }
+
+  memory dspr
+  {
+    mau = 8;
+    type = ram;
+    size = DSPR_SIZE;
+    map (dest = bus:tc0:fpi_bus, dest_offset = DSPR_BASE, size = DSPR_SIZE);
+  }
+}
+
+processor mpe
+{
+  derivative = nuttx_tc3x;
+}
+
+section_setup mpe:tc0:linear
+{
+  start_address (symbol = "__start");
+
+  /* The startup code initializes .data and .bss itself, the copy table
+   * only has to exist for the locator.
+   */
+
+  copytable (align = 4, dest = linear);
+}
+
+section_layout mpe:tc0:linear
+{
+  /* Reset entry, the trap table at +0x100 and the interrupt vector at
+   * +0x1fe0, which BIV points at with all priority bits set
+   */
+
+  group start (ordered, run_addr = PFLS_BASE)
+  {
+    select ".text.start";
+  }
+
+  group traptab (ordered, run_addr = PFLS_BASE + 0x100)
+  {
+    select ".text.traptab";
+  }
+
+  group intvec (ordered, run_addr = PFLS_BASE + 0x1fe0)
+  {
+    select ".text.intvec";
+  }
+
+  group text (run_addr = mem:mpe:pfls)
+  {
+    select ".text*";
+    select ".rodata*";
+  }
+
+  /* Small data and constants, addressed relative to A0, A1, A8 and A9 */
+
+#include "base_address_groups.lsl"
+
+  /* .data and .bss at the start of the data scratchpad RAM, the heap
+   * from there to the idle stack
+   */
+
+  group dspr_area (ordered, contiguous, run_addr = DSPR_BASE)
+  {
+    group data (ordered, contiguous, align = 4, attributes = rwu)
+    {
+      select ".data*";
+    }
+
+    group bss (ordered, contiguous, align = 4, attributes = rwu)
+    {
+      select ".bss*";
+    }
+  }
+
+  /* The startup code copies .data as one block from flash, so its ROM
+   * copies are selected by name to get the same order as in RAM.
+   */
+
+  group data_rom (ordered, contiguous, align = 4, load_addr)
+  {
+    select ".data*";
+  }
+
+  group ustack_area (ordered, run_addr = USTACK0_END)
+  {
+    reserved "ustack" (size = USTACK_SIZE);
+  }
+
+  group istack_area (ordered, run_addr = ISTACK0_END)
+  {
+    reserved "istack" (size = ISTACK_SIZE);
+  }
+
+  group csa_area (ordered, run_addr = CSA0)
+  {
+    reserved "csa" (size = CSA_SIZE);
+  }
+
+  "__TRAPTAB_CPU0" := PFLS_BASE + 0x100;
+  "__INTTAB_CPU0" := PFLS_BASE;
+
+  "__A0_MEM" := sizeof(group:a0) > 0 ? addressof(group:a0) + 0x8000 : 0;
+  "__A1_MEM" := sizeof(group:a1) > 0 ? addressof(group:a1) + 0x8000 : 0;
+  "__A8_MEM" := sizeof(group:a8) > 0 ? addressof(group:a8) + 0x8000 : 0;
+  "__A9_MEM" := sizeof(group:a9) > 0 ? addressof(group:a9) + 0x8000 : 0;
+
+  "_sdata" = "_lc_gb_data";
+  "_edata" = "_lc_ge_data";
+  "_data_flash" = "_lc_gb_data_rom";
+  "_sbss" = "_lc_gb_bss";
+  "_ebss" = "_lc_ge_bss";
+  "_sheap" := addressof(group:bss) + sizeof(group:bss);
+  "_eheap" := USTACK0_END;
+  "__USTACK0_END" := USTACK0_END;
+  "__USTACK0" := USTACK0;
+  "__ISTACK0_END" := ISTACK0_END;
+  "__ISTACK0" := ISTACK0;
+  "__CSA0" := CSA0;
+  "__CSA0_END" := CSA0_END;
+
+  /* The other cores start at the program flash of their own image */
+
+  "__START1" := 0x80300000;
+  "__START2" := 0x80600000;
+  "__START3" := 0x80900000;
+  "__START4" := 0x80c00000;
+  "__START5" := 0x80f00000;
+}
