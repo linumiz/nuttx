@@ -21,8 +21,8 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Trap vector table, one per core.  BTV points at the table of the core in
- * use; the linker script keeps the .traptab_cpuN section of that core.
+ * Trap vector table.  An image runs on a single core, whose BTV points at
+ * this table.
  *
  * Each 32-byte slot saves the lower context and enters the common trap
  * entry with the trap class in %d5; the hardware has put the TIN in %d15
@@ -61,11 +61,10 @@
 	.p2align 5
 	.endm
 
-	.macro	TRAPTAB cpu
-	.section .traptab_cpu\cpu, "ax", %progbits
+	.section .traptab, "ax", %progbits
 	.p2align 8
-	.global	tricore_trap_vectors_cpu\cpu
-tricore_trap_vectors_cpu\cpu:
+	.global	tricore_trap_vectors
+tricore_trap_vectors:
 	TRAPSLOT 0, tricore_trap_entry
 	TRAPSLOT 1, tricore_trap_entry
 	TRAPSLOT 2, tricore_trap_entry
@@ -74,14 +73,6 @@ tricore_trap_vectors_cpu\cpu:
 	TRAPSLOT 5, tricore_trap_entry
 	TRAPSLOT 6, tricore_syscall_entry
 	TRAPSLOT 7, tricore_trap_entry
-	.endm
-
-	TRAPTAB 0
-	TRAPTAB 1
-	TRAPTAB 2
-	TRAPTAB 3
-	TRAPTAB 4
-	TRAPTAB 5
 
 	.section .intvec, "ax", %progbits
 	.p2align 5

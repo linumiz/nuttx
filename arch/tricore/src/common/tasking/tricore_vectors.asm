@@ -45,12 +45,11 @@ TRAPJUMP	.macro	entry
 	.align	32
 	.endm
 
-TRAPTAB	.macro	cpu, label
-	.sdecl	".text.traptab_cpu\cpu",code,protect
-	.sect	".text.traptab_cpu\cpu"
+	.sdecl	".text.traptab",code,protect
+	.sect	".text.traptab"
 	.align	256
-	.global	label
-label:
+	.global	tricore_trap_vectors
+tricore_trap_vectors:
 	TRAPSLOT	0, tricore_trap_entry
 	TRAPSLOT	1, tricore_trap_entry
 	TRAPSLOT	2, tricore_trap_entry
@@ -59,14 +58,6 @@ label:
 	TRAPSLOT	5, tricore_trap_entry
 	TRAPSLOT	6, tricore_syscall_entry
 	TRAPSLOT	7, tricore_trap_entry
-	.endm
-
-	TRAPTAB	0, tricore_trap_vectors_cpu0
-	TRAPTAB	1, tricore_trap_vectors_cpu1
-	TRAPTAB	2, tricore_trap_vectors_cpu2
-	TRAPTAB	3, tricore_trap_vectors_cpu3
-	TRAPTAB	4, tricore_trap_vectors_cpu4
-	TRAPTAB	5, tricore_trap_vectors_cpu5
 
 	.sdecl	".text.intvec",code,protect
 	.sect	".text.intvec"
