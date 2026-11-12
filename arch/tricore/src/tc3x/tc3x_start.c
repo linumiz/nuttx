@@ -39,7 +39,7 @@
 
 /* Provided by the linker script */
 
-extern uintptr_t __START1[];
+extern uintptr_t __start1[];
 
 /****************************************************************************
  * Public Functions
@@ -69,7 +69,7 @@ void tricore_ram_init(void)
 
 void tricore_start_cores(void)
 {
-  putreg32((getreg32(TC3X_CPU1_PC) & 1) | ((uintptr_t)__START1 & ~1),
+  putreg32((getreg32(TC3X_CPU1_PC) & 1) | ((uintptr_t)__start1 & ~1),
            TC3X_CPU1_PC);
   if ((getreg32(TC3X_CPU1_SYSCON) & TC3X_SYSCON_BHALT) != 0)
     {

@@ -198,9 +198,9 @@ section_layout mpe:tc0:linear
 
   /* The other cores start at the program flash of their own image */
 
-  "__START1" := 0x80200000;
-  "__START2" := 0x80580000;
-  "__START3" := 0x80680000;
-  "__START4" := 0x807e0000;
-  "__START5" := 0x8092c000;
+  "__start1" := 0x80200000;
+  "__start2" := 0x80580000;
+  "__start3" := 0x80680000;
+  "__start4" := 0x807e0000;
+  "__start5" := 0x8092c000;
 }

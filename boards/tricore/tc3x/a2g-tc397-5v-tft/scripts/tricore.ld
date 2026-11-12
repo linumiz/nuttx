@@ -52,11 +52,11 @@ __USTACK0_END = __USTACK0 - __USTACK_SIZE;
 
 /* The other cores start at the program flash of their own image */
 
-PROVIDE(__START1 = 0x80300000);
-PROVIDE(__START2 = 0x80600000);
-PROVIDE(__START3 = 0x80900000);
-PROVIDE(__START4 = 0x80c00000);
-PROVIDE(__START5 = 0x80f00000);
+PROVIDE(__start1 = 0x80300000);
+PROVIDE(__start2 = 0x80600000);
+PROVIDE(__start3 = 0x80900000);
+PROVIDE(__start4 = 0x80c00000);
+PROVIDE(__start5 = 0x80f00000);
 
 SECTIONS
 {

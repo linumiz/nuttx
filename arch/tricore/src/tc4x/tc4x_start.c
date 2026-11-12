@@ -51,11 +51,11 @@
 
 /* Provided by the linker script */
 
-extern uintptr_t __START1[];
-extern uintptr_t __START2[];
-extern uintptr_t __START3[];
-extern uintptr_t __START4[];
-extern uintptr_t __START5[];
+extern uintptr_t __start1[];
+extern uintptr_t __start2[];
+extern uintptr_t __start3[];
+extern uintptr_t __start4[];
+extern uintptr_t __start5[];
 
 /****************************************************************************
  * Private Data
@@ -251,13 +251,13 @@ void tricore_ram_init(void)
 
 void tricore_start_cores(void)
 {
-  tc4x_start_core(1, (uintptr_t)__START1);
+  tc4x_start_core(1, (uintptr_t)__start1);
   tc4x_delay();
-  tc4x_start_core(2, (uintptr_t)__START2);
+  tc4x_start_core(2, (uintptr_t)__start2);
   tc4x_delay();
-  tc4x_start_core(3, (uintptr_t)__START3);
+  tc4x_start_core(3, (uintptr_t)__start3);
   tc4x_delay();
-  tc4x_start_core(4, (uintptr_t)__START4);
+  tc4x_start_core(4, (uintptr_t)__start4);
   tc4x_delay();
-  tc4x_start_core(5, (uintptr_t)__START5);
+  tc4x_start_core(5, (uintptr_t)__start5);
 }
