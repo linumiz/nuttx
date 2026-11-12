@@ -173,12 +173,10 @@ section_layout mpe:tc0:linear
   "_ebss" = "_lc_ge_bss";
   "_sheap" := addressof(group:bss) + sizeof(group:bss);
   "_eheap" := USTACK0_END;
-  "__USTACK0_END" := USTACK0_END;
-  "__USTACK0" := USTACK0;
-  "__ISTACK0_END" := ISTACK0_END;
-  "__ISTACK0" := ISTACK0;
-  "__CSA0" := CSA0;
-  "__CSA0_END" := CSA0_END;
+  "__USTACK" := USTACK0;
+  "__istack" := ISTACK0;
+  "__CSA_BEGIN" := CSA0;
+  "__CSA_END" := CSA0_END;
 
   /* The other cores start at the program flash of their own image */
 

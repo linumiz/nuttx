@@ -121,18 +121,18 @@ tricore_head:
 	mtcr	TRICORE_CPU_BIV, %d15
 	isync
 
-	movh.a	%a15, hi:__ISTACK0
-	lea	%a15, [%a15]lo:__ISTACK0
+	movh.a	%a15, hi:__istack
+	lea	%a15, [%a15]lo:__istack
 	mov.d	%d15, %a15
 	mtcr	TRICORE_CPU_ISP, %d15
 	isync
 
-	/* Free CSA list from __CSA0 to __CSA0_END, LCX at the third last */
+	/* Free CSA list from __CSA_BEGIN to __CSA_END, LCX at the third last */
 
-	movh.a	%a15, hi:__CSA0
-	lea	%a15, [%a15]lo:__CSA0
-	movh.a	%a14, hi:__CSA0_END
-	lea	%a14, [%a14]lo:__CSA0_END
+	movh.a	%a15, hi:__CSA_BEGIN
+	lea	%a15, [%a15]lo:__CSA_BEGIN
+	movh.a	%a14, hi:__CSA_END
+	lea	%a14, [%a14]lo:__CSA_END
 	mov.d	%d15, %a15
 	tricore_csa_link %d15, %d14, %d13
 	mtcr	TRICORE_CPU_FCX, %d15
@@ -153,8 +153,8 @@ tricore_head:
 	jl	tc3x_endinit_set
 
 #endif
-	movh.a	%sp, hi:__USTACK0
-	lea	%sp, [%sp]lo:__USTACK0
+	movh.a	%sp, hi:__USTACK
+	lea	%sp, [%sp]lo:__USTACK
 	dsync
 
 	movh.a	%a1, hi:__A1_MEM
@@ -307,8 +307,8 @@ __start:
 	movh.a	%sp, hi:__PSRAM_USTACK
 	lea	%sp, [%sp]lo:__PSRAM_USTACK
 #else
-	movh.a	%sp, hi:__USTACK0
-	lea	%sp, [%sp]lo:__USTACK0
+	movh.a	%sp, hi:__USTACK
+	lea	%sp, [%sp]lo:__USTACK
 #endif
 	dsync
 	movh.a	%a15, hi:tricore_head

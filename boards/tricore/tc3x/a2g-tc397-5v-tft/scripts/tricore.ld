@@ -43,12 +43,10 @@ __CSA_SIZE    = 40K;
 __ISTACK_SIZE = CONFIG_ARCH_INTERRUPTSTACK;
 __USTACK_SIZE = CONFIG_IDLETHREAD_STACKSIZE;
 
-__CSA0_END    = ORIGIN(dspr) + LENGTH(dspr);
-__CSA0        = __CSA0_END - __CSA_SIZE;
-__ISTACK0     = __CSA0;
-__ISTACK0_END = __ISTACK0 - __ISTACK_SIZE;
-__USTACK0     = __ISTACK0_END;
-__USTACK0_END = __USTACK0 - __USTACK_SIZE;
+__CSA_END     = ORIGIN(dspr) + LENGTH(dspr);
+__CSA_BEGIN   = __CSA_END - __CSA_SIZE;
+__istack      = __CSA_BEGIN;
+__USTACK      = __istack - __ISTACK_SIZE;
 
 /* The other cores start at the program flash of their own image */
 
@@ -156,19 +154,19 @@ SECTIONS
     _sheap = ABSOLUTE(.);
   } > dspr
 
-  _eheap = __USTACK0_END;
+  _eheap = __USTACK - __USTACK_SIZE;
 
-  .ustack __USTACK0_END (NOLOAD) :
+  .ustack __USTACK - __USTACK_SIZE (NOLOAD) :
   {
     . += __USTACK_SIZE;
   } > dspr
 
-  .istack __ISTACK0_END (NOLOAD) :
+  .istack __istack - __ISTACK_SIZE (NOLOAD) :
   {
     . += __ISTACK_SIZE;
   } > dspr
 
-  .csa __CSA0 (NOLOAD) :
+  .csa __CSA_BEGIN (NOLOAD) :
   {
     . += __CSA_SIZE;
   } > dspr

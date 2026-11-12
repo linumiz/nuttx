@@ -60,10 +60,10 @@ tricore_csa_link .macro addr, tmp1, tmp2
 	.extern	_ebss
 	.extern	tricore_clockconfig
 	.extern	tricore_start
-	.extern	__USTACK0
-	.extern	__ISTACK0
-	.extern	__CSA0
-	.extern	__CSA0_END
+	.extern	__USTACK
+	.extern	__istack
+	.extern	__CSA_BEGIN
+	.extern	__CSA_END
 	.extern	__A0_MEM
 	.extern	__A1_MEM
 	.extern	__A8_MEM
@@ -145,18 +145,18 @@ tricore_head:
 	mtcr	#TRICORE_CPU_BIV, d15
 	isync
 
-	movh.a	a15, #@HIS(__ISTACK0)
-	lea	a15, [a15]@LOS(__ISTACK0)
+	movh.a	a15, #@HIS(__istack)
+	lea	a15, [a15]@LOS(__istack)
 	mov.d	d15, a15
 	mtcr	#TRICORE_CPU_ISP, d15
 	isync
 
-	; Free CSA list from __CSA0 to __CSA0_END, LCX at the third last
+	; Free CSA list from __CSA_BEGIN to __CSA_END, LCX at the third last
 
-	movh.a	a15, #@HIS(__CSA0)
-	lea	a15, [a15]@LOS(__CSA0)
-	movh.a	a14, #@HIS(__CSA0_END)
-	lea	a14, [a14]@LOS(__CSA0_END)
+	movh.a	a15, #@HIS(__CSA_BEGIN)
+	lea	a15, [a15]@LOS(__CSA_BEGIN)
+	movh.a	a14, #@HIS(__CSA_END)
+	lea	a14, [a14]@LOS(__CSA_END)
 	mov.d	d15, a15
 	tricore_csa_link d15, d14, d13
 	mtcr	#TRICORE_CPU_FCX, d15
@@ -177,8 +177,8 @@ tricore_head:
 	jl	tc3x_endinit_set
 
 #endif
-	movh.a	a10, #@HIS(__USTACK0)
-	lea	a10, [a10]@LOS(__USTACK0)
+	movh.a	a10, #@HIS(__USTACK)
+	lea	a10, [a10]@LOS(__USTACK)
 	dsync
 
 	movh.a	a1, #@HIS(__A1_MEM)
@@ -326,8 +326,8 @@ __start:
 	movh.a	a10, #@HIS(__PSRAM_USTACK)
 	lea	a10, [a10]@LOS(__PSRAM_USTACK)
 #else
-	movh.a	a10, #@HIS(__USTACK0)
-	lea	a10, [a10]@LOS(__USTACK0)
+	movh.a	a10, #@HIS(__USTACK)
+	lea	a10, [a10]@LOS(__USTACK)
 #endif
 	dsync
 	movh.a	a15, #@HIS(tricore_head)

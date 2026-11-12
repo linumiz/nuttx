@@ -182,12 +182,10 @@ section_layout mpe:tc0:linear
   "_ebss" = "_lc_ge_bss";
   "_sheap" := DSPR_BASE;
   "_eheap" := USTACK0_END;
-  "__USTACK0_END" := USTACK0_END;
-  "__USTACK0" := USTACK0;
-  "__ISTACK0_END" := ISTACK0_END;
-  "__ISTACK0" := ISTACK0;
-  "__CSA0" := CSA0;
-  "__CSA0_END" := CSA0_END;
+  "__USTACK" := USTACK0;
+  "__istack" := ISTACK0;
+  "__CSA_BEGIN" := CSA0;
+  "__CSA_END" := CSA0_END;
 
   /* Boot stack and single boot CSA in the PSPR, which the startup code
    * uses to disable the virtualization before it links the CSAs
