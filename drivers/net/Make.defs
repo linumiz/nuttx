@@ -127,6 +127,7 @@ ifeq ($(CONFIG_DRIVERS_WIFI_SIM),y)
 endif
 
 include net/oa_tc6/Make.defs
+include net/dwxgmac/Make.defs
 
 ifeq ($(CONFIG_NET_PHYLIB),y)
   CSRCS += phy_core.c phy_access.c phy_device.c

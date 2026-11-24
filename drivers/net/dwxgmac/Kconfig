@@ -1,0 +1,60 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+menuconfig NET_DWXGMAC
+	bool "Synopsys DesignWare XGMAC support"
+	default n
+	select ARCH_HAVE_NETDEV_STATISTICS
+	---help---
+		Ethernet driver for the Synopsys DesignWare XGMAC and its DMA.
+		The chip code describes each MAC to dwxgmac_initialize.
+
+if NET_DWXGMAC
+
+config NET_DWXGMAC_NINTERFACES
+	int "Number of interfaces"
+	default 1
+	range 1 4
+
+config NET_DWXGMAC_NRXCHANNELS
+	int "Number of RX DMA channels"
+	default 1
+	range 1 8
+	---help---
+		RX DMA channels of an interface, each with the MTL RX queue of
+		the same number.  An 802.1Q tagged frame is received on the
+		channel of its PCP modulo the number of channels.
+
+config NET_DWXGMAC_NTXCHANNELS
+	int "Number of TX DMA channels"
+	default 1
+	range 1 8
+	---help---
+		TX DMA channels of an interface, each with the MTL TX queue of
+		the same number.
+
+config NET_DWXGMAC_NRXDESC
+	int "RX descriptors per channel"
+	default 8
+
+config NET_DWXGMAC_NTXDESC
+	int "TX descriptors per channel"
+	default 8
+
+config NET_DWXGMAC_DMA_SECTION
+	string "Linker section of the DMA descriptors"
+	---help---
+		Place the DMA descriptors in this linker section, for parts
+		where the Ethernet DMA cannot reach the memory of .bss.  The
+		packet buffers then need a reachable section as well, see
+		IOB_SECTION.  Empty for .bss.
+
+config NET_DWXGMAC_MDIO
+	bool "MDIO bus"
+	default n
+	---help---
+		Register the MDIO bus of the MAC with dwxgmac_mdio_initialize.
+
+endif # NET_DWXGMAC

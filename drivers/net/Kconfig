@@ -845,6 +845,7 @@ config NET_IGC_INT_INTERVAL
 endif # NET_IGC
 
 source "drivers/net/oa_tc6/Kconfig"
+source "drivers/net/dwxgmac/Kconfig"
 
 comment "PHY Support"
 
