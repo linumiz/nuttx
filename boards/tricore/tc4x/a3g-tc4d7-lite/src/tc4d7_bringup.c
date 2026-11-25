@@ -78,6 +78,15 @@ int tc4d7_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_TC4X_GETH
+  ret = tc4d7_ethernet_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize the Ethernet: %d\n",
+             ret);
+    }
+#endif
+
 #ifdef CONFIG_DEV_GPIO
   /* The user LEDs as /dev/gpio0 and /dev/gpio1, off at boot */
 

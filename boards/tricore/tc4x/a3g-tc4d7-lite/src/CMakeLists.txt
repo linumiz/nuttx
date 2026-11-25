@@ -22,6 +22,10 @@
 
 set(SRCS tc4d7_boardinit.c tc4d7_bringup.c)
 
+if(CONFIG_TC4X_GETH)
+  list(APPEND SRCS tc4d7_ethernet.c)
+endif()
+
 target_sources(board PRIVATE ${SRCS})
 
 if(CONFIG_TRICORE_TOOLCHAIN_TASKING)

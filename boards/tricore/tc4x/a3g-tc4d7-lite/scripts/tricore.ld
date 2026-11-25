@@ -40,6 +40,7 @@ MEMORY
   pfls (rx!p) : ORIGIN = 0x80000000, LENGTH = 1024K
   dspr (w!xp) : ORIGIN = DSPR_ORIGIN, LENGTH = DSPR_LENGTH
   dlmu (w!xp) : ORIGIN = 0x90020400, LENGTH = 171K
+  lmu  (w!xp) : ORIGIN = 0xb0400000, LENGTH = 512K
 }
 
 REGION_ALIAS("DATA", dlmu)
@@ -167,6 +168,16 @@ SECTIONS
     . = ALIGN(4);
     _ebss = ABSOLUTE(.);
   } > DATA
+
+  /* DMA descriptors and buffers of the Ethernet in LMU0, which the GETH
+   * DMA reaches and the CPU accesses uncached through segment 0xb.  The
+   * startup clears the LMU at every reset.
+   */
+
+  .dma_data (NOLOAD) : ALIGN(64)
+  {
+    *(.dma_data .dma_data.*)
+  } > lmu
 
   __a0_mem = _sdata + 32K;
   __a9_mem = __a0_mem;

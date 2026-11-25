@@ -29,6 +29,27 @@ NuttShell with the ostest and hello examples::
 
     tools/configure.sh a3g-tc4d7-lite:nsh
 
+netnsh
+------
+
+NuttShell with the Ethernet, the ping and iperf commands, and the address
+192.168.178.230/24::
+
+    tools/configure.sh a3g-tc4d7-lite:netnsh
+
+Ethernet
+========
+
+The DP83825I PHY is on port 0 of the GETH in RMII mode, with the TX pins on
+P16.6, P16.8 and P16.13, the RX pins on P16.0, P16.1, P16.2 and P16.4, and
+MDC and MDIO on P21.2 and P21.3.  The board polls the PHY once a second and
+reports the link to the dwxgmac driver.  The DMA descriptors and the I/O
+buffers are in the non-cached alias of LMU0, the ``.dma_data`` section of
+the linker script.  10 and 100 Mbit/s are supported::
+
+    nsh> ping -c 4 192.168.178.27
+    nsh> iperf -s -i 1
+
 User LEDs
 =========
 

@@ -70,5 +70,17 @@
 int tc4d7_bringup(void);
 #endif
 
+/****************************************************************************
+ * Name: tc4d7_ethernet_initialize
+ *
+ * Description:
+ *   Set up the RMII pins, the GETH and the PHY of the Ethernet
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_TC4X_GETH
+int tc4d7_ethernet_initialize(void);
+#endif
+
 #endif /* __ASSEMBLY__ */
 #endif /* __BOARDS_TRICORE_TC4X_A3G_TC4D7_LITE_SRC_TC4D7_H */

@@ -24,5 +24,9 @@ include $(TOPDIR)/Make.defs
 
 CSRCS = tc4d7_boardinit.c tc4d7_bringup.c
 
+ifeq ($(CONFIG_TC4X_GETH),y)
+CSRCS += tc4d7_ethernet.c
+endif
+
 
 include $(TOPDIR)/boards/Board.mk
