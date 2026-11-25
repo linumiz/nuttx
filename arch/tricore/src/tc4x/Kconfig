@@ -38,3 +38,12 @@ comment "TC4X Configuration Options"
 config CPU_CLOCK_FREQUENCY
 	int "CPU clock frequency (Hz)"
 	default 500000000
+
+config TC4X_GETH
+	bool "GETH Ethernet"
+	default n
+	depends on NET_DWXGMAC
+	---help---
+		Port 0 of the GETH in RMII mode, with the dwxgmac driver.  The
+		board sets up the RMII pins and the PHY and calls
+		tc4x_geth_initialize.

@@ -26,6 +26,10 @@ CHIP_CSRCS += tc4x_clockconfig.c
 CHIP_CSRCS += tc4x_gpio.c
 CHIP_CSRCS += tc4x_ram.c
 
+ifeq ($(CONFIG_TC4X_GETH),y)
+CHIP_CSRCS += tc4x_geth.c
+endif
+
 include common/aurix/Make.defs
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)

@@ -22,6 +22,10 @@
 
 set(SRCS tc4x_timerisr.c tc4x_wdt.c tc4x_clockconfig.c tc4x_ram.c tc4x_gpio.c)
 
+if(CONFIG_TC4X_GETH)
+  list(APPEND SRCS tc4x_geth.c)
+endif()
+
 target_sources(arch PRIVATE ${SRCS})
 
 add_subdirectory(${NUTTX_DIR}/arch/tricore/src/common/aurix aurix)
